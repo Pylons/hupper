@@ -1,0 +1,3 @@
+[run]
+source = hupper, tests
+branch = True
