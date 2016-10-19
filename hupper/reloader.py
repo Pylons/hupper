@@ -54,7 +54,18 @@ class WatchForParentShutdown(threading.Thread):
         interrupt_main()
 
 
-class WorkerProcess(multiprocessing.Process):
+class ReloaderProxy(object):
+    def watch_files(self, files):
+        """ Signal to the parent process to track some custom paths."""
+        pass
+
+
+class WorkerProcess(ReloaderProxy, multiprocessing.Process):
+    """ The process responsible for handling the worker.
+
+    The worker process object also acts as a proxy back to the reloader.
+
+    """
     def __init__(self, worker_path, files_queue, parent_pid, environ_key):
         super(WorkerProcess, self).__init__()
         self.worker_path = worker_path
@@ -81,30 +92,40 @@ class WorkerProcess(multiprocessing.Process):
         func()
 
     def watch_files(self, files):
+        """ Signal to the parent process to track some custom paths."""
         for file in files:
             self.files_queue.put(file)
 
 
 class Reloader(object):
+    """
+    A wrapper class around a file monitor which will handle changes by
+    restarting a new worker process.
+
+    """
     def __init__(self,
                  worker_path,
                  monitor_factory,
                  reload_interval=1,
                  verbose=1,
-                 envkey=RELOADER_ENVIRON_KEY,
+                 environ_key=RELOADER_ENVIRON_KEY,
                  ):
         self.worker_path = worker_path
         self.monitor_factory = monitor_factory
         self.reload_interval = reload_interval
         self.verbose = verbose
         self.monitor = None
-        self.environ_key = envkey
+        self.environ_key = environ_key
 
     def out(self, msg):
         if self.verbose > 0:
             print(msg)
 
     def run(self):
+        """
+        Execute the reloader forever, blocking the current thread.
+
+        """
         self._start_monitor()
         try:
             while True:
@@ -119,6 +140,12 @@ class Reloader(object):
                 self._stop_monitor()
 
     def run_once(self):
+        """
+        Execute the worker once.
+
+        This method will return after a file change is detected.
+
+        """
         self._start_monitor()
         try:
             self._run_worker()
@@ -179,6 +206,26 @@ class Reloader(object):
 
 
 def start_reloader(worker_path, reload_interval=1, verbose=1):
+    """
+    Start a monitor and then fork a worker process which starts by executing
+    the importable function at ``worker_path``.
+
+    If this function is called from a worker process that is already being
+    monitored then it will return a reference to the current
+    :class:`.ReloaderProxy` which can be used to communicate with the monitor.
+
+    ``worker_path`` must be a dotted string pointing to a globally importable
+    function that will be executed to start the worker. An example could be
+    ``myapp.cli.main``. In most cases it will point at the same function that
+    is invoking ``start_reloader`` in the first place.
+
+    ``reload_interval`` is a value in seconds and will be used to throttle
+    restarts.
+
+    ``verbose`` controls the output. Set to ``0`` to turn off any logging
+    of activity and turn up to ``2`` for extra output.
+
+    """
     if RELOADER_ENVIRON_KEY in os.environ:
         return get_reloader()
 
@@ -196,6 +243,12 @@ def start_reloader(worker_path, reload_interval=1, verbose=1):
 
 
 def get_reloader():
+    """ Get a reference to the current :class:`.ReloaderProxy`.
+
+    Raises a ``RuntimeError`` if the current process is not actively being
+    monitored by a parent process.
+
+    """
     p = multiprocessing.current_process()
     if not isinstance(p, WorkerProcess):
         raise RuntimeError('process is not controlled by hupper')
@@ -203,6 +256,10 @@ def get_reloader():
 
 
 def is_active():
+    """
+    Return ``True`` if the current process being monitored by a parent process.
+
+    """
     try:
         get_reloader()
     except RuntimeError:
@@ -211,6 +268,17 @@ def is_active():
 
 
 def watch_files(files):
+    """
+    Mark certain file paths to be watched for changes which will trigger a
+    restart.
+
+    This function may be called from either the worker process or from the
+    monitor process prior to calling :func:`.start_reloader`.
+
+    """
+    # TODO need to make this work from the monitor process as well, probably
+    # by setting some global state on the Reloader class similar to how
+    # pserve used to work via the classinstancemethod decorator
     reloader = get_reloader()
     reloader.watch_files(files)
 
