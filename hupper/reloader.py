@@ -3,12 +3,14 @@ from __future__ import print_function
 import importlib
 import multiprocessing
 import os
+import signal
+import sys
 import threading
 import time
-import sys
 
 from .compat import interrupt_main
 from .compat import queue
+from .interfaces import IReloaderProxy
 from .polling import PollingFileMonitor
 
 
@@ -54,13 +56,7 @@ class WatchForParentShutdown(threading.Thread):
         interrupt_main()
 
 
-class ReloaderProxy(object):
-    def watch_files(self, files):
-        """ Signal to the parent process to track some custom paths."""
-        pass
-
-
-class WorkerProcess(ReloaderProxy, multiprocessing.Process):
+class WorkerProcess(IReloaderProxy, multiprocessing.Process):
     """ The process responsible for handling the worker.
 
     The worker process object also acts as a proxy back to the reloader.
@@ -96,6 +92,9 @@ class WorkerProcess(ReloaderProxy, multiprocessing.Process):
         for file in files:
             self.files_queue.put(file)
 
+    def trigger_reload(self):
+        os.kill(self.parent_pid, signal.SIGHUP)
+
 
 class Reloader(object):
     """
@@ -115,6 +114,7 @@ class Reloader(object):
         self.reload_interval = reload_interval
         self.verbose = verbose
         self.monitor = None
+        self.worker = None
         self.environ_key = environ_key
 
     def out(self, msg):
@@ -126,6 +126,7 @@ class Reloader(object):
         Execute the reloader forever, blocking the current thread.
 
         """
+        self._capture_signals()
         self._start_monitor()
         try:
             while True:
@@ -136,6 +137,7 @@ class Reloader(object):
                 if debounce > 0:
                     time.sleep(debounce)
         finally:
+            self._restore_signals()
             if self.monitor:
                 self._stop_monitor()
 
@@ -155,18 +157,18 @@ class Reloader(object):
 
     def _run_worker(self):
         files_queue = multiprocessing.Queue()
-        worker = WorkerProcess(
+        self.worker = WorkerProcess(
             self.worker_path,
             files_queue,
             os.getpid(),
             self.environ_key,
         )
-        worker.daemon = True
-        worker.start()
+        self.worker.daemon = True
+        self.worker.start()
 
-        self.out("Starting monitor for PID %s." % worker.pid)
+        self.out("Starting monitor for PID %s." % self.worker.pid)
 
-        while not self.monitor.is_changed() and worker.is_alive():
+        while not self.monitor.is_changed() and self.worker.is_alive():
             try:
                 path = files_queue.get(timeout=self.reload_interval)
             except queue.Empty:
@@ -176,16 +178,16 @@ class Reloader(object):
 
         self.monitor.clear_changes()
 
-        if worker.is_alive():
-            self.out("Killing server with PID %s." % worker.pid)
-            worker.terminate()
-            worker.join()
+        if self.worker.is_alive():
+            self.out("Killing server with PID %s." % self.worker.pid)
+            self.worker.terminate()
+            self.worker.join()
             return True
 
         else:
-            worker.join()
+            self.worker.join()
             self.out('Server with PID %s exited with code %d.' %
-                     (worker.pid, worker.exitcode))
+                     (self.worker.pid, self.worker.exitcode))
             return False
 
     def _wait_for_changes(self):
@@ -203,6 +205,19 @@ class Reloader(object):
         self.monitor.stop()
         self.monitor.join()
         self.monitor = None
+
+    def _capture_signals(self):
+        signal.signal(signal.SIGHUP, self._signal_sighup)
+
+    def _signal_sighup(self):
+        self.out('Received SIGHUP, triggering a reload.')
+        try:
+            self.worker.terminate()
+        except: # pragma: nocover
+            pass
+
+    def _restore_signals(self):
+        signal.signal(signal.SIGHUP, signal.SIG_DFL)
 
 
 def start_reloader(worker_path, reload_interval=1, verbose=1):
@@ -250,7 +265,7 @@ def get_reloader():
 
     """
     p = multiprocessing.current_process()
-    if not isinstance(p, WorkerProcess):
+    if not isinstance(p, IReloaderProxy):
         raise RuntimeError('process is not controlled by hupper')
     return p
 

@@ -2,8 +2,10 @@ import os
 import threading
 import time
 
+from .interfaces import IFileMonitor
 
-class PollingFileMonitor(threading.Thread):
+
+class PollingFileMonitor(IFileMonitor, threading.Thread):
     def __init__(self, poll_interval=1, verbose=1):
         super(PollingFileMonitor, self).__init__()
         self.poll_interval = poll_interval

@@ -1,9 +1,14 @@
 # public api
-#
+# flake8: noqa
+
+from .interfaces import (
+    IFileMonitor,
+    IReloaderProxy,
+)
+
 from .polling import PollingFileMonitor
 
 from .reloader import (
-    ReloaderProxy,
     Reloader,
     is_active,
     get_reloader,
