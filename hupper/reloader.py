@@ -45,12 +45,12 @@ class WatchForParentShutdown(threading.Thread):
     def run(self):
         try:
             # wait until the pipe breaks
-            while True:
-                if self.pipe.poll(1):
-                    self.pipe.recv_bytes()
+            while self.pipe.recv_bytes(): # pragma: nocover
+                pass
         except EOFError:
             pass
 
+        print('parent is dead, cleaning up')
         interrupt_main()
 
 
@@ -60,11 +60,11 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
     The worker process object also acts as a proxy back to the reloader.
 
     """
-    def __init__(self, worker_path, files_queue, pipe):
+    def __init__(self, worker_path, files_queue, pipes):
         super(WorkerProcess, self).__init__()
         self.worker_path = worker_path
         self.files_queue = files_queue
-        self.pipe = pipe
+        self.pipe, self.parent_pipe = pipes
 
     def run(self):
         # import the worker path
@@ -74,6 +74,9 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
 
         poller = WatchSysModules(self.files_queue.put)
         poller.start()
+
+        # close the parent end of the pipe, we aren't using it in the worker
+        self.parent_pipe.close()
 
         parent_watcher = WatchForParentShutdown(self.pipe)
         parent_watcher.start()
@@ -154,7 +157,7 @@ class Reloader(object):
         self.worker = WorkerProcess(
             self.worker_path,
             files_queue,
-            worker_pipe,
+            (worker_pipe, pipe),
         )
         self.worker.daemon = True
         self.worker.start()
@@ -169,6 +172,7 @@ class Reloader(object):
                 try:
                     # if the child has sent any data then restart
                     if pipe.poll(0):
+                        # do not read, the pipe is closed after the break
                         break
                 except EOFError: # pragma: nocover
                     pass
@@ -203,7 +207,7 @@ class Reloader(object):
         while (
             not self.do_not_wait and
             not self.monitor.wait_for_change(self.reload_interval)
-        ):
+        ): # pragma: nocover
             pass
 
         self.do_not_wait = False
