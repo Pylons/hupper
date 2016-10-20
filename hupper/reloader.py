@@ -47,7 +47,7 @@ class WatchForParentShutdown(threading.Thread):
             # wait until the pipe breaks
             while True:
                 if self.pipe.poll(1):
-                    self.pipe.recv()
+                    self.pipe.recv_bytes()
         except EOFError:
             pass
 
@@ -87,7 +87,7 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
             self.files_queue.put(file)
 
     def trigger_reload(self):
-        self.pipe.send(1)
+        self.pipe.send_bytes(b'1')
 
 
 class Reloader(object):
