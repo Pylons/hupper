@@ -46,8 +46,8 @@ class WatchForParentShutdown(threading.Thread):
         try:
             # wait until the pipe breaks
             while True:
-                ret = self.pipe.poll(1)
-                print(ret)
+                if self.pipe.poll(1):
+                    self.pipe.recv()
         except EOFError:
             pass
 
@@ -130,9 +130,9 @@ class Reloader(object):
                 if debounce > 0:
                     time.sleep(debounce)
         finally:
-            self._restore_signals()
             if self.monitor:
                 self._stop_monitor()
+            self._restore_signals()
 
     def run_once(self):
         """
@@ -211,7 +211,6 @@ class Reloader(object):
 
     def _start_monitor(self):
         self.monitor = self.monitor_factory()
-        self.monitor.daemon = True
         self.monitor.start()
 
     def _stop_monitor(self):
