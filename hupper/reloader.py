@@ -56,7 +56,7 @@ class WatchForParentShutdown(threading.Thread):
         interrupt_main()
 
 
-class WorkerProcess(IReloaderProxy, multiprocessing.Process):
+class WorkerProcess(multiprocessing.Process, IReloaderProxy):
     """ The process responsible for handling the worker.
 
     The worker process object also acts as a proxy back to the reloader.
@@ -116,6 +116,7 @@ class Reloader(object):
         self.monitor = None
         self.worker = None
         self.environ_key = environ_key
+        self.do_not_wait = False
 
     def out(self, msg):
         if self.verbose > 0:
@@ -191,9 +192,13 @@ class Reloader(object):
             return False
 
     def _wait_for_changes(self):
-        while not self.monitor.wait_for_change(self.reload_interval):
+        while (
+            not self.do_not_wait and
+            not self.monitor.wait_for_change(self.reload_interval)
+        ):
             pass
 
+        self.do_not_wait = False
         self.monitor.clear_changes()
 
     def _start_monitor(self):
@@ -209,9 +214,10 @@ class Reloader(object):
     def _capture_signals(self):
         signal.signal(signal.SIGHUP, self._signal_sighup)
 
-    def _signal_sighup(self):
+    def _signal_sighup(self, signum, frame):
         self.out('Received SIGHUP, triggering a reload.')
         try:
+            self.do_not_wait = True
             self.worker.terminate()
         except: # pragma: nocover
             pass
@@ -252,7 +258,7 @@ def start_reloader(worker_path, reload_interval=1, verbose=1):
         reload_interval=reload_interval,
         verbose=verbose,
         monitor_factory=monitor_factory,
-        envkey=RELOADER_ENVIRON_KEY,
+        environ_key=RELOADER_ENVIRON_KEY,
     )
     return reloader.run()
 

@@ -5,7 +5,7 @@ import time
 from .interfaces import IFileMonitor
 
 
-class PollingFileMonitor(IFileMonitor, threading.Thread):
+class PollingFileMonitor(threading.Thread, IFileMonitor):
     def __init__(self, poll_interval=1, verbose=1):
         super(PollingFileMonitor, self).__init__()
         self.poll_interval = poll_interval
