@@ -14,9 +14,6 @@ from .interfaces import IReloaderProxy
 from .polling import PollingFileMonitor
 
 
-RELOADER_ENVIRON_KEY = 'HUPPER_RELOADER'
-
-
 class WatchSysModules(threading.Thread):
     """ Poll ``sys.modules`` for imported modules."""
     poll_interval = 1
@@ -40,18 +37,19 @@ class WatchSysModules(threading.Thread):
 
 
 class WatchForParentShutdown(threading.Thread):
-    """ Poll the parent process to ensure it is still alive."""
-    poll_interval = 1
-
-    def __init__(self, parent_pid):
+    """ Monitor the channel to ensure the parent is still alive."""
+    def __init__(self, pipe):
         super(WatchForParentShutdown, self).__init__()
-        self.parent_pid = parent_pid
+        self.pipe = pipe
 
     def run(self):
-        # If parent shuts down (and we are adopted by a different parent
-        # process), we should shut down.
-        while (os.getppid() == self.parent_pid):
-            time.sleep(self.poll_interval)
+        try:
+            # wait until the pipe breaks
+            while True:
+                ret = self.pipe.poll(1)
+                print(ret)
+        except EOFError:
+            pass
 
         interrupt_main()
 
@@ -62,17 +60,13 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
     The worker process object also acts as a proxy back to the reloader.
 
     """
-    def __init__(self, worker_path, files_queue, parent_pid, environ_key):
+    def __init__(self, worker_path, files_queue, pipe):
         super(WorkerProcess, self).__init__()
         self.worker_path = worker_path
         self.files_queue = files_queue
-        self.parent_pid = parent_pid
-        self.environ_key = environ_key
+        self.pipe = pipe
 
     def run(self):
-        # activate the environ
-        os.environ[self.environ_key] = '1'
-
         # import the worker path
         modname, funcname = self.worker_path.rsplit('.', 1)
         module = importlib.import_module(modname)
@@ -81,7 +75,7 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
         poller = WatchSysModules(self.files_queue.put)
         poller.start()
 
-        parent_watcher = WatchForParentShutdown(self.parent_pid)
+        parent_watcher = WatchForParentShutdown(self.pipe)
         parent_watcher.start()
 
         # start the worker
@@ -93,7 +87,7 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
             self.files_queue.put(file)
 
     def trigger_reload(self):
-        os.kill(self.parent_pid, signal.SIGHUP)
+        self.pipe.send(1)
 
 
 class Reloader(object):
@@ -107,7 +101,6 @@ class Reloader(object):
                  monitor_factory,
                  reload_interval=1,
                  verbose=1,
-                 environ_key=RELOADER_ENVIRON_KEY,
                  ):
         self.worker_path = worker_path
         self.monitor_factory = monitor_factory
@@ -115,7 +108,6 @@ class Reloader(object):
         self.verbose = verbose
         self.monitor = None
         self.worker = None
-        self.environ_key = environ_key
         self.do_not_wait = False
 
     def out(self, msg):
@@ -158,24 +150,40 @@ class Reloader(object):
 
     def _run_worker(self):
         files_queue = multiprocessing.Queue()
+        pipe, worker_pipe = multiprocessing.Pipe()
         self.worker = WorkerProcess(
             self.worker_path,
             files_queue,
-            os.getpid(),
-            self.environ_key,
+            worker_pipe,
         )
         self.worker.daemon = True
         self.worker.start()
 
+        # we no longer control the worker's end of the pipe
+        worker_pipe.close()
+
         self.out("Starting monitor for PID %s." % self.worker.pid)
 
-        while not self.monitor.is_changed() and self.worker.is_alive():
+        try:
+            while not self.monitor.is_changed() and self.worker.is_alive():
+                try:
+                    # if the child has sent any data then restart
+                    if pipe.poll(0):
+                        break
+                except EOFError: # pragma: nocover
+                    pass
+
+                try:
+                    path = files_queue.get(timeout=self.reload_interval)
+                except queue.Empty:
+                    pass
+                else:
+                    self.monitor.add_path(path)
+        finally:
             try:
-                path = files_queue.get(timeout=self.reload_interval)
-            except queue.Empty:
+                pipe.close()
+            except: # pragma: nocover
                 pass
-            else:
-                self.monitor.add_path(path)
 
         self.monitor.clear_changes()
 
@@ -247,7 +255,7 @@ def start_reloader(worker_path, reload_interval=1, verbose=1):
     of activity and turn up to ``2`` for extra output.
 
     """
-    if RELOADER_ENVIRON_KEY in os.environ:
+    if is_active():
         return get_reloader()
 
     def monitor_factory():
@@ -258,7 +266,6 @@ def start_reloader(worker_path, reload_interval=1, verbose=1):
         reload_interval=reload_interval,
         verbose=verbose,
         monitor_factory=monitor_factory,
-        environ_key=RELOADER_ENVIRON_KEY,
     )
     return reloader.run()
 
