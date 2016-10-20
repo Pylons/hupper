@@ -49,8 +49,6 @@ class WatchForParentShutdown(threading.Thread):
                 pass
         except EOFError:
             pass
-
-        print('parent is dead, cleaning up')
         interrupt_main()
 
 
@@ -60,11 +58,12 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
     The worker process object also acts as a proxy back to the reloader.
 
     """
-    def __init__(self, worker_path, files_queue, pipes):
+    def __init__(self, worker_path, files_queue, pipes, stdinfd):
         super(WorkerProcess, self).__init__()
         self.worker_path = worker_path
         self.files_queue = files_queue
         self.pipe, self.parent_pipe = pipes
+        self.stdinfd = stdinfd
 
     def run(self):
         # import the worker path
@@ -77,6 +76,9 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
 
         # close the parent end of the pipe, we aren't using it in the worker
         self.parent_pipe.close()
+        del self.parent_pipe
+
+        sys.stdin = os.fdopen(self.stdinfd)
 
         parent_watcher = WatchForParentShutdown(self.pipe)
         parent_watcher.start()
@@ -152,18 +154,28 @@ class Reloader(object):
                 self._stop_monitor()
 
     def _run_worker(self):
+        # prepare to close our stdin by making a new copy that is
+        # not attached to sys.stdin - we will pass this to the worker while
+        # it's running and then restore it when the worker is done
+        worker_stdinfd = os.dup(sys.stdin.fileno())
+
         files_queue = multiprocessing.Queue()
         pipe, worker_pipe = multiprocessing.Pipe()
         self.worker = WorkerProcess(
             self.worker_path,
             files_queue,
             (worker_pipe, pipe),
+            worker_stdinfd,
         )
-        self.worker.daemon = True
         self.worker.start()
 
         # we no longer control the worker's end of the pipe
         worker_pipe.close()
+        del worker_pipe
+
+        # kill our stdin while the worker is using it
+        sys.stdin.close()
+        sys.stdin = open(os.devnull)
 
         self.out("Starting monitor for PID %s." % self.worker.pid)
 
@@ -188,6 +200,8 @@ class Reloader(object):
                 pipe.close()
             except: # pragma: nocover
                 pass
+            # restore the monitors stdin now that worker has stopped using it
+            sys.stdin = os.fdopen(worker_stdinfd)
 
         self.monitor.clear_changes()
 
