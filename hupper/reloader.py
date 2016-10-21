@@ -201,22 +201,25 @@ class Reloader(object):
                 pipe.close()
             except: # pragma: nocover
                 pass
-            # restore the monitors stdin now that worker has stopped using it
-            sys.stdin = os.fdopen(stdin)
 
         self.monitor.clear_changes()
 
+        force_exit = False
         if self.worker.is_alive():
             self.out("Killing server with PID %s." % self.worker.pid)
             self.worker.terminate()
             self.worker.join()
-            return True
+            force_exit = True
 
         else:
             self.worker.join()
             self.out('Server with PID %s exited with code %d.' %
                      (self.worker.pid, self.worker.exitcode))
-            return False
+
+        # restore the monitor's stdin now that worker has stopped using it
+        sys.stdin = os.fdopen(stdin)
+
+        return force_exit
 
     def _wait_for_changes(self):
         while (
