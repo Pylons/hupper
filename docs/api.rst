@@ -10,8 +10,8 @@
 
 .. autofunction:: get_reloader
 
-.. autofunction:: watch_files
-
-.. autoclass:: ReloaderProxy
-
 .. autoclass:: Reloader
+
+.. autoclass:: IReloaderProxy
+
+.. autoclass:: IFileMonitor

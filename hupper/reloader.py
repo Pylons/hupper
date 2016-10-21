@@ -297,7 +297,7 @@ def start_reloader(worker_path, reload_interval=1, verbose=1):
 
 
 def get_reloader():
-    """ Get a reference to the current :class:`.ReloaderProxy`.
+    """ Get a reference to the current :class:`.IReloaderProxy`.
 
     Raises a ``RuntimeError`` if the current process is not actively being
     monitored by a parent process.
@@ -319,22 +319,6 @@ def is_active():
     except RuntimeError:
         return False
     return True
-
-
-def watch_files(files):
-    """
-    Mark certain file paths to be watched for changes which will trigger a
-    restart.
-
-    This function may be called from either the worker process or from the
-    monitor process prior to calling :func:`.start_reloader`.
-
-    """
-    # TODO need to make this work from the monitor process as well, probably
-    # by setting some global state on the Reloader class similar to how
-    # pserve used to work via the classinstancemethod decorator
-    reloader = get_reloader()
-    reloader.watch_files(files)
 
 
 def get_module_paths(modules=None):
