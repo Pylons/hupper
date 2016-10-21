@@ -11,7 +11,10 @@
 .. autofunction:: get_reloader
 
 .. autoclass:: Reloader
+   :members:
 
 .. autoclass:: IReloaderProxy
+   :members:
 
 .. autoclass:: IFileMonitor
+   :members:
