@@ -95,7 +95,7 @@ Controlling the monitor
 
 The worker processes may communicate back to the monitor and notify it of
 new files to watch. This can be done by acquiring a reference to the
-:class:`hupper.ReloaderProxy` instance living in the worker process.
+:class:`hupper.IReloaderProxy` instance living in the worker process.
 The :func:`hupper.start_reloader` function will return the instance or
 :func:`hupper.get_reloader` can be used as well.
 
