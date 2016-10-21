@@ -147,12 +147,14 @@ class Reloader(object):
         This method will return after a file change is detected.
 
         """
+        self._capture_signals()
         self._start_monitor()
         try:
             self._run_worker()
         finally:
             if self.monitor:
                 self._stop_monitor()
+            self._restore_signals()
 
     def _run_worker(self):
         # prepare to close our stdin by making a new copy that is
@@ -217,6 +219,7 @@ class Reloader(object):
                      (self.worker.pid, self.worker.exitcode))
 
         # restore the monitor's stdin now that worker has stopped using it
+        sys.stdin.close()
         sys.stdin = os.fdopen(stdin)
 
         return force_exit
