@@ -238,7 +238,8 @@ class Reloader(object):
         self.monitor = None
 
     def _capture_signals(self):
-        signal.signal(signal.SIGHUP, self._signal_sighup)
+        if hasattr(signal, 'SIGHUP'):
+            signal.signal(signal.SIGHUP, self._signal_sighup)
 
     def _signal_sighup(self, signum, frame):
         self.out('Received SIGHUP, triggering a reload.')
@@ -249,7 +250,8 @@ class Reloader(object):
             pass
 
     def _restore_signals(self):
-        signal.signal(signal.SIGHUP, signal.SIG_DFL)
+        if hasattr(signal, 'SIGHUP'):
+            signal.signal(signal.SIGHUP, signal.SIG_DFL)
 
 
 def start_reloader(worker_path, reload_interval=1, verbose=1):
