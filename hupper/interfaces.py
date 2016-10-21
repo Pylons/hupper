@@ -9,7 +9,7 @@ class IReloaderProxy(with_metaclass(abc.ABCMeta)):
         pass
 
     @abc.abstractmethod
-    def trigger_reload(self, files):
+    def trigger_reload(self):
         """ Signal the monitor to execute a reload."""
         pass
 
