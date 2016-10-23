@@ -149,6 +149,8 @@ class Reloader(object):
                 debounce = self.reload_interval - (time.time() - start)
                 if debounce > 0:
                     time.sleep(debounce)
+        except KeyboardInterrupt:
+            return
         finally:
             if self.monitor:
                 self._stop_monitor()
@@ -165,6 +167,8 @@ class Reloader(object):
         self._start_monitor()
         try:
             self._run_worker()
+        except KeyboardInterrupt:
+            return
         finally:
             if self.monitor:
                 self._stop_monitor()
