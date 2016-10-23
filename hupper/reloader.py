@@ -36,8 +36,22 @@ class WatchSysModules(threading.Thread):
                 self.callback(path)
 
 
+def get_module_paths(modules=None):
+    """Yield paths of all imported modules."""
+    modules = modules or list(sys.modules.values())
+    for module in modules:
+        try:
+            filename = module.__file__
+        except (AttributeError, ImportError):
+            continue
+        if filename is not None:
+            abs_filename = os.path.abspath(filename)
+            if os.path.isfile(abs_filename):
+                yield abs_filename
+
+
 class WatchForParentShutdown(threading.Thread):
-    """ Monitor the channel to ensure the parent is still alive."""
+    """ Watch the pipe to ensure the parent is still alive."""
     def __init__(self, pipe):
         super(WatchForParentShutdown, self).__init__()
         self.pipe = pipe
@@ -78,7 +92,7 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
         self.parent_pipe.close()
         del self.parent_pipe
 
-        # use the stdin fd passed in from the monitor process
+        # use the stdin fd passed in from the reloader process
         sys.stdin = os.fdopen(self.stdin)
 
         parent_watcher = WatchForParentShutdown(self.pipe)
@@ -114,7 +128,7 @@ class Reloader(object):
         self.verbose = verbose
         self.monitor = None
         self.worker = None
-        self.do_not_wait = False
+        self.worker_terminated = False
 
     def out(self, msg):
         if self.verbose > 0:
@@ -157,6 +171,8 @@ class Reloader(object):
             self._restore_signals()
 
     def _run_worker(self):
+        self.worker_terminated = False
+
         # prepare to close our stdin by making a new copy that is
         # not attached to sys.stdin - we will pass this to the worker while
         # it's running and then restore it when the worker is done
@@ -176,7 +192,7 @@ class Reloader(object):
         worker_pipe.close()
         del worker_pipe
 
-        # kill our stdin while the worker is using it
+        # kill reloader's stdin while the worker is using it
         sys.stdin.close()
         sys.stdin = open(os.devnull)
 
@@ -206,7 +222,7 @@ class Reloader(object):
 
         self.monitor.clear_changes()
 
-        force_exit = False
+        force_exit = self.worker_terminated
         if self.worker.is_alive():
             self.out("Killing server with PID %s." % self.worker.pid)
             self.worker.terminate()
@@ -218,20 +234,20 @@ class Reloader(object):
             self.out('Server with PID %s exited with code %d.' %
                      (self.worker.pid, self.worker.exitcode))
 
-        # restore the monitor's stdin now that worker has stopped using it
+        # restore the reloader's stdin now that worker has stopped using it
         sys.stdin.close()
         sys.stdin = os.fdopen(stdin)
 
+        # restore force_exit, incase it was overwritten by a signal handler
+        self.worker_terminated = False
         return force_exit
 
     def _wait_for_changes(self):
         while (
-            not self.do_not_wait and
             not self.monitor.wait_for_change(self.reload_interval)
         ): # pragma: nocover
             pass
 
-        self.do_not_wait = False
         self.monitor.clear_changes()
 
     def _start_monitor(self):
@@ -244,13 +260,14 @@ class Reloader(object):
         self.monitor = None
 
     def _capture_signals(self):
+        # SIGHUP is not supported on windows
         if hasattr(signal, 'SIGHUP'):
             signal.signal(signal.SIGHUP, self._signal_sighup)
 
     def _signal_sighup(self, signum, frame):
         self.out('Received SIGHUP, triggering a reload.')
         try:
-            self.do_not_wait = True
+            self.worker_terminated = True
             self.worker.terminate()
         except: # pragma: nocover
             pass
@@ -319,17 +336,3 @@ def is_active():
     except RuntimeError:
         return False
     return True
-
-
-def get_module_paths(modules=None):
-    """Yield paths of all imported modules."""
-    modules = modules or list(sys.modules.values())
-    for module in modules:
-        try:
-            filename = module.__file__
-        except (AttributeError, ImportError):
-            continue
-        if filename is not None:
-            abs_filename = os.path.abspath(filename)
-            if os.path.isfile(abs_filename):
-                yield abs_filename
