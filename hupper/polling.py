@@ -20,7 +20,8 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
             self.paths.add(path)
 
     def out(self, msg):
-        print(msg)
+        if self.verbose > 0:
+            print(msg)
 
     def run(self):
         self.enabled = True

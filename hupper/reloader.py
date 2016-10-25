@@ -10,6 +10,7 @@ import time
 
 from .compat import interrupt_main
 from .compat import queue
+from .compat import is_watchdog_supported
 from .interfaces import IReloaderProxy
 from .polling import PollingFileMonitor
 
@@ -281,7 +282,12 @@ class Reloader(object):
             signal.signal(signal.SIGHUP, signal.SIG_DFL)
 
 
-def start_reloader(worker_path, reload_interval=1, verbose=1):
+def start_reloader(
+    worker_path,
+    reload_interval=1,
+    verbose=1,
+    monitor_factory=None,
+):
     """
     Start a monitor and then fork a worker process which starts by executing
     the importable function at ``worker_path``.
@@ -301,12 +307,26 @@ def start_reloader(worker_path, reload_interval=1, verbose=1):
     ``verbose`` controls the output. Set to ``0`` to turn off any logging
     of activity and turn up to ``2`` for extra output.
 
+    ``monitor_factory`` must be a callable that returns an instance of
+    :class:`hupper.interfaces.IFileMonitor` which will be used to monitor
+    for file changes. By default, this will try to create a
+    :class:`hupper.watchdog.WatchdogFileMonitor` if
+    `watchdog <https://pypi.org/project/watchdog/>`_ is installed and will
+    fallback to the less efficient
+    :class:`hupper.polling.PollingFileMonitor` otherwise.
+
     """
     if is_active():
         return get_reloader()
 
-    def monitor_factory():
-        return PollingFileMonitor(reload_interval, verbose)
+    if monitor_factory is None:
+        if is_watchdog_supported():
+            from .watchdog import WatchdogFileMonitor
+            def monitor_factory():
+                return WatchdogFileMonitor(verbose)
+        else:
+            def monitor_factory():
+                return PollingFileMonitor(reload_interval, verbose)
 
     reloader = Reloader(
         worker_path=worker_path,

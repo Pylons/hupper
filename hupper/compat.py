@@ -21,3 +21,10 @@ except ImportError:
 def with_metaclass(meta, base=object):
     """Create a base class with a metaclass."""
     return meta("%sBase" % meta.__name__, (base,), {})
+
+def is_watchdog_supported():
+    try:
+        import watchdog
+    except ImportError:
+        return False
+    return True

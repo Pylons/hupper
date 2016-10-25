@@ -45,6 +45,19 @@ Once you have a copy of the source, you can install it with:
 
 .. _Github repo: https://github.com/Pylons/hupper
 
+Watchdog support
+----------------
+
+If `watchdog <https://pypi.org/project/watchdog/>`_ is installed, it will be
+used to more efficiently watch for changes to files.
+
+.. code-block:: console
+
+    $ pip install watchdog
+
+This is an optional dependency and if it's not installed them ``hupper`` will
+fallback to less efficient polling of the filesystem.
+
 Usage
 =====
 

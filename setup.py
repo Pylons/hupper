@@ -11,11 +11,13 @@ except IOError:
     readme = changes = ''
 
 docs_require = [
+    'watchdog',
     'Sphinx',
     'pylons-sphinx-themes',
 ]
 
 tests_require = [
+    'watchdog',
     'pytest',
     'pytest-cov',
     'mock',

@@ -18,3 +18,7 @@
 
 .. autoclass:: IFileMonitor
    :members:
+
+.. autoclass:: PollingFileMonitor
+
+.. autoclass:: WatchdogFileMonitor

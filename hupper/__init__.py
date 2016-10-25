@@ -1,6 +1,8 @@
 # public api
 # flake8: noqa
 
+from .compat import is_watchdog_supported
+
 from .interfaces import (
     IFileMonitor,
     IReloaderProxy,
@@ -14,3 +16,6 @@ from .reloader import (
     get_reloader,
     start_reloader,
 )
+
+if is_watchdog_supported():
+    from .watchdog import WatchdogFileMonitor
