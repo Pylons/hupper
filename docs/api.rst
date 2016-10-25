@@ -10,10 +10,12 @@
 
   .. autofunction:: get_reloader
 
+  .. autofunction: is_watchdog_supported
+
+.. automodule:: hupper.reloader
+
   .. autoclass:: Reloader
     :members:
-
-  .. autofunction: is_watchdog_supported
 
 .. automodule:: hupper.interfaces
 
