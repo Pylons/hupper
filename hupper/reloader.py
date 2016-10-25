@@ -12,7 +12,6 @@ from .compat import interrupt_main
 from .compat import queue
 from .compat import is_watchdog_supported
 from .interfaces import IReloaderProxy
-from .polling import PollingFileMonitor
 
 
 class WatchSysModules(threading.Thread):
@@ -325,6 +324,7 @@ def start_reloader(
             def monitor_factory():
                 return WatchdogFileMonitor(verbose)
         else:
+            from .polling import PollingFileMonitor
             def monitor_factory():
                 return PollingFileMonitor(reload_interval, verbose)
 
