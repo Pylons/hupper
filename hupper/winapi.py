@@ -13,8 +13,8 @@ class JobObjectInfoType(object):
     GroupInformation = 11
 
 
-class JOBOBJECTLIMIT(object):
-    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+class JobObjectLimit(object):
+    KILL_ON_JOB_CLOSE = 0x2000
 
 
 class IO_COUNTERS(ctypes.Structure):
@@ -141,7 +141,7 @@ class ProcessGroup(object):
         self.h_job = CreateJobObject(None, None)
 
         info = JOBOBJECT_BASIC_LIMIT_INFORMATION()
-        info.LimitFlags = JOBOBJECTLIMIT.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        info.LimitFlags = JobObjectLimit.KILL_ON_JOB_CLOSE
 
         extended_info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
         extended_info.BasicLimitInformation = info
@@ -149,7 +149,7 @@ class ProcessGroup(object):
         SetInformationJobObject(
             self.h_job,
             JobObjectInfoType.ExtendedLimitInformation,
-            extended_info,
+            ctypes.pointer(extended_info),
             ctypes.sizeof(extended_info),
         )
 
