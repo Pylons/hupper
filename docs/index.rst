@@ -2,12 +2,11 @@
 hupper
 ======
 
-``hupper`` is a loader interface around arbitrary config file formats. It
-exists to define a common API for applications to use when they wish to load
-configuration settings. The library itself does not aim to handle anything
-except a basic API that applications may use to find and load configuration
-settings. Any specific constraints should be implemented in a pluggable loader
-which can be registered via an entrypoint.
+``hupper`` is monitor for your Python process. When files change, the process
+will be restarted. It can be extended to watch arbitrary files. Reloads can
+also be triggered manually from code. File monitoring can be done using
+basic polling or using inotify-style filesystem events if watchdog_ is
+installed.
 
 Installation
 ============
