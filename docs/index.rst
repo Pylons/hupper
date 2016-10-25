@@ -55,7 +55,7 @@ used to more efficiently watch for changes to files.
 
     $ pip install watchdog
 
-This is an optional dependency and if it's not installed them ``hupper`` will
+This is an optional dependency and if it's not installed, then ``hupper`` will
 fallback to less efficient polling of the filesystem.
 
 Usage
@@ -108,9 +108,9 @@ Controlling the monitor
 
 The worker processes may communicate back to the monitor and notify it of
 new files to watch. This can be done by acquiring a reference to the
-:class:`hupper.IReloaderProxy` instance living in the worker process.
-The :func:`hupper.start_reloader` function will return the instance or
-:func:`hupper.get_reloader` can be used as well.
+:class:`hupper.interfaces.IReloaderProxy` instance living in the worker
+process. The :func:`hupper.start_reloader` function will return the instance
+or :func:`hupper.get_reloader` can be used as well.
 
 More Information
 ================

@@ -8,14 +8,9 @@ from .interfaces import (
     IReloaderProxy,
 )
 
-from .polling import PollingFileMonitor
-
 from .reloader import (
     Reloader,
     is_active,
     get_reloader,
     start_reloader,
 )
-
-if is_watchdog_supported():
-    from .watchdog import WatchdogFileMonitor

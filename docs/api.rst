@@ -4,21 +4,27 @@
 
 .. automodule:: hupper
 
-.. autofunction:: start_reloader
+  .. autofunction:: start_reloader
 
-.. autofunction:: is_active
+  .. autofunction:: is_active
 
-.. autofunction:: get_reloader
+  .. autofunction:: get_reloader
 
-.. autoclass:: Reloader
-   :members:
+  .. autoclass:: Reloader
+    :members:
 
-.. autoclass:: IReloaderProxy
-   :members:
+.. automodule:: hupper.interfaces
 
-.. autoclass:: IFileMonitor
-   :members:
+  .. autoclass:: IReloaderProxy
+    :members:
 
-.. autoclass:: PollingFileMonitor
+  .. autoclass:: IFileMonitor
+    :members:
 
-.. autoclass:: WatchdogFileMonitor
+.. automodule:: hupper.polling
+
+  .. autoclass:: PollingFileMonitor
+
+.. automodule:: hupper.watchdog
+
+  .. autoclass:: WatchdogFileMonitor

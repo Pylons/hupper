@@ -338,7 +338,8 @@ def start_reloader(
 
 
 def get_reloader():
-    """ Get a reference to the current :class:`.IReloaderProxy`.
+    """ Get a reference to the current
+    :class:`hupper.interfaces.IReloaderProxy`.
 
     Raises a ``RuntimeError`` if the current process is not actively being
     monitored by a parent process.
