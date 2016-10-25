@@ -23,6 +23,7 @@ def with_metaclass(meta, base=object):
     return meta("%sBase" % meta.__name__, (base,), {})
 
 def is_watchdog_supported():
+    """ Return ``True`` if watchdog is available."""
     try:
         import watchdog
     except ImportError:

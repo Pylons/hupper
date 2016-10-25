@@ -13,6 +13,8 @@
   .. autoclass:: Reloader
     :members:
 
+  .. autofunction: is_watchdog_supported
+
 .. automodule:: hupper.interfaces
 
   .. autoclass:: IReloaderProxy
