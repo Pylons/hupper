@@ -114,7 +114,7 @@ def OpenProcess(desiredAccess, inherit, pid):
 
 
 def CreateJobObject(jobAttributes, name):
-    hp = kernel32.CreateJobObject(jobAttributes, name)
+    hp = kernel32.CreateJobObjectA(jobAttributes, name)
     if not hp:
         raise RuntimeError('failed to create job object')
     return Handle(hp)
@@ -148,7 +148,7 @@ class ProcessGroup(object):
 
         SetInformationJobObject(
             self.h_job,
-            JobObjectInfoType.BasicLimitInformation,
+            JobObjectInfoType.ExtendedLimitInformation,
             extended_info,
             ctypes.sizeof(extended_info),
         )
