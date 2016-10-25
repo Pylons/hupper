@@ -8,9 +8,12 @@ import sys
 import threading
 import time
 
-from .compat import interrupt_main
-from .compat import queue
-from .compat import is_watchdog_supported
+from .compat import (
+    ProcessGroup,
+    interrupt_main,
+    is_watchdog_supported,
+    queue,
+)
 from .interfaces import IReloaderProxy
 
 
@@ -129,6 +132,7 @@ class Reloader(object):
         self.monitor = None
         self.worker = None
         self.worker_terminated = False
+        self.group = ProcessGroup()
 
     def out(self, msg):
         if self.verbose > 0:
@@ -191,6 +195,9 @@ class Reloader(object):
             stdin,
         )
         self.worker.start()
+
+        # register the worker with the process group
+        self.group.add_child(self.worker.pid)
 
         # we no longer control the worker's end of the pipe
         worker_pipe.close()
