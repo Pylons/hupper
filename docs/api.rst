@@ -10,7 +10,7 @@
 
   .. autofunction:: get_reloader
 
-  .. autofunction: is_watchdog_supported
+  .. autofunction:: is_watchdog_supported
 
 .. automodule:: hupper.reloader
 
