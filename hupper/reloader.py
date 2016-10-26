@@ -10,8 +10,10 @@ import time
 
 from .compat import (
     ProcessGroup,
+    duplicate_fd,
     interrupt_main,
     is_watchdog_supported,
+    open_fd,
     queue,
 )
 from .interfaces import IReloaderProxy
@@ -96,7 +98,7 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
         del self.parent_pipe
 
         # use the stdin fd passed in from the reloader process
-        sys.stdin = os.fdopen(self.stdin)
+        sys.stdin = open_fd(self.stdin, 'rb')
 
         parent_watcher = WatchForParentShutdown(self.pipe)
         parent_watcher.start()
@@ -184,7 +186,7 @@ class Reloader(object):
         # prepare to close our stdin by making a new copy that is
         # not attached to sys.stdin - we will pass this to the worker while
         # it's running and then restore it when the worker is done
-        stdin = os.dup(sys.stdin.fileno())
+        stdin = duplicate_fd(sys.stdin.fileno())
 
         files_queue = multiprocessing.Queue()
         pipe, worker_pipe = multiprocessing.Pipe()
@@ -204,8 +206,8 @@ class Reloader(object):
         del worker_pipe
 
         # kill reloader's stdin while the worker is using it
-        sys.stdin.close()
-        sys.stdin = open(os.devnull)
+        # sys.stdin.close()
+        # sys.stdin = open(os.devnull)
 
         self.out("Starting monitor for PID %s." % self.worker.pid)
 
@@ -246,8 +248,8 @@ class Reloader(object):
                      (self.worker.pid, self.worker.exitcode))
 
         # restore the reloader's stdin now that worker has stopped using it
-        sys.stdin.close()
-        sys.stdin = os.fdopen(stdin)
+        # sys.stdin.close()
+        # sys.stdin = open_fd(stdin, 'rb')
 
         # restore force_exit, incase it was overwritten by a signal handler
         self.worker_terminated = False

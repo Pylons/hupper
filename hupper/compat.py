@@ -1,5 +1,5 @@
 # flake8: noqa
-import ctypes
+import os
 import sys
 
 PY2 = sys.version_info[0] == 2
@@ -18,12 +18,20 @@ except ImportError:
 if WIN: # pragma: nocover
     from .winapi import (
         ProcessGroup,
+        duplicate_fd,
+        open_fd,
     )
 else:
     class ProcessGroup(object):
         def add_child(self, pid):
             # nothing to do on *nix
             pass
+
+    def duplicate_fd(fd):
+        return os.dup(fd)
+
+    def open_fd(fd, mode):
+        return os.fdopen(fd, mode)
 
 def is_watchdog_supported():
     """ Return ``True`` if watchdog is available."""

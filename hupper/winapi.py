@@ -1,5 +1,7 @@
 import ctypes
+from ctypes import wintypes
 import msvcrt
+import os
 
 kernel32 = ctypes.windll.kernel32
 
@@ -81,6 +83,10 @@ class ProcessAccessLimit(object):
         StandardAccessLimit.STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF)
 
 
+class DuplicateOption(object):
+    DUPLICATE_SAME_ACCESS = 0x0002
+
+
 class Handle(int):
     closed = False
 
@@ -105,6 +111,24 @@ class Handle(int):
 def CloseHandle(h):
     kernel32.CloseHandle(h)
 
+
+def DuplicateHandle(
+    sourceProcessHandle, sourceHandle, targetProcessHandle,
+    desiredAccess, inheritHandle, options
+):
+    targetHandle = wintypes.HANDLE()
+    ret = kernel32.DuplicateHandle(
+        sourceProcessHandle, sourceHandle, targetProcessHandle,
+        ctypes.byref(targetHandle), desiredAccess, inheritHandle, options)
+    if not ret:
+        raise RuntimeError('failed to duplicate handle')
+    return Handle(targetHandle.value)
+
+
+def GetCurrentProcess():
+    hp = kernel32.GetCurrentProcess()
+    return Handle(hp)
+    
 
 def OpenProcess(desiredAccess, inherit, pid):
     hp = kernel32.OpenProcess(desiredAccess, inherit, pid)
@@ -156,3 +180,23 @@ class ProcessGroup(object):
     def add_child(self, pid):
         hp = OpenProcess(ProcessAccessLimit.PROCESS_ALL_ACCESS, False, pid)
         return AssignProcessToJobObject(self.h_job, hp)
+
+def duplicate_fd(fd):
+    new_fd = os.dup(fd)
+    h = msvcrt.get_osfhandle(new_fd)
+    new_h = DuplicateHandle(
+        GetCurrentProcess(), h, GetCurrentProcess(),
+        0, True, DuplicateOption.DUPLICATE_SAME_ACCESS,
+    )
+    return new_h
+
+def open_fd(h, mode):
+    flags = 0
+    if 'w' not in mode and '+' not in mode:
+        flags |= os.O_RDONLY
+    if 'b' not in mode:
+        flags |= os.O_TEXT
+    if 'a' in mode:
+        flags |= os.O_APPEND
+    fd = msvcrt.open_osfhandle(h, flags)
+    return os.fdopen(fd, mode)
