@@ -3,7 +3,7 @@ from ctypes import wintypes
 import msvcrt
 import os
 
-kernel32 = ctypes.windll.kernel32
+kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 
 class JobObjectInfoType(object):
     AssociateCompletionPortInformation = 7
@@ -112,6 +112,11 @@ def CloseHandle(h):
     kernel32.CloseHandle(h)
 
 
+def CheckError(result, msg):
+    if not result:
+        raise ctypes.WinError(ctypes.get_last_error(), msg)
+
+
 def DuplicateHandle(
     sourceProcessHandle, sourceHandle, targetProcessHandle,
     desiredAccess, inheritHandle, options
@@ -120,8 +125,7 @@ def DuplicateHandle(
     ret = kernel32.DuplicateHandle(
         sourceProcessHandle, sourceHandle, targetProcessHandle,
         ctypes.byref(targetHandle), desiredAccess, inheritHandle, options)
-    if not ret:
-        raise RuntimeError('failed to duplicate handle')
+    CheckError(ret, 'failed to duplicate handle')
     return Handle(targetHandle.value)
 
 
@@ -132,15 +136,13 @@ def GetCurrentProcess():
 
 def OpenProcess(desiredAccess, inherit, pid):
     hp = kernel32.OpenProcess(desiredAccess, inherit, pid)
-    if not hp:
-        raise RuntimeError('failed to open process')
+    CheckError(hp, 'failed to open process')
     return Handle(hp)
 
 
 def CreateJobObject(jobAttributes, name):
     hp = kernel32.CreateJobObjectA(jobAttributes, name)
-    if not hp:
-        raise RuntimeError('failed to create job object')
+    CheckError(hp, 'failed to create job object')
     return Handle(hp)
 
 
@@ -150,14 +152,12 @@ def SetInformationJobObject(
     ret = kernel32.SetInformationJobObject(
         hJob, infoType, jobObjectInfo, jobObjectInfoLength,
     )
-    if not ret:
-        raise RuntimeError('failed to set information job object')
+    CheckError(ret, 'failed to set information job object')
 
 
 def AssignProcessToJobObject(hJob, hProcess):
     ret = kernel32.AssignProcessToJobObject(hJob, hProcess)
-    if not ret:
-        raise RuntimeError('failed to assign process to job object')
+    CheckError(ret, 'failed to assign process to job object')
 
 
 class ProcessGroup(object):
@@ -188,8 +188,7 @@ def send_fd(pipe, fd, pid):
     tp = DuplicateHandle(
         GetCurrentProcess(), hf, hp,
         0, True, DuplicateOption.DUPLICATE_SAME_ACCESS,
-    )
-    tp.Detach()  # do not close the handle
+    ).Detach()  # do not close the handle
     pipe.send(tp)
 
 
