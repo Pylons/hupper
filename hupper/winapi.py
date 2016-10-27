@@ -181,16 +181,17 @@ class ProcessGroup(object):
         hp = OpenProcess(ProcessAccessLimit.PROCESS_ALL_ACCESS, False, pid)
         return AssignProcessToJobObject(self.h_job, hp)
 
-def duplicate_fd(fd):
-    new_fd = os.dup(fd)
-    h = msvcrt.get_osfhandle(new_fd)
-    new_h = DuplicateHandle(
-        GetCurrentProcess(), h, GetCurrentProcess(),
+def send_fd(fd, pid, pipe):
+    hf = msvcrt.get_osfhandle(fd)
+    hp = OpenProcess(ProcessAccessLimit.PROCESS_ALL_ACCESS, False, pid)
+    tp = DuplicateHandle(
+        GetCurrentProcess(), hf, hp,
         0, True, DuplicateOption.DUPLICATE_SAME_ACCESS,
     )
-    return new_h
+    pipe.send(tp)
 
-def open_fd(h, mode):
+def recv_fd(pipe, mode):
+    handle = pipe.recv()
     flags = 0
     if 'w' not in mode and '+' not in mode:
         flags |= os.O_RDONLY
@@ -198,5 +199,5 @@ def open_fd(h, mode):
         flags |= os.O_TEXT
     if 'a' in mode:
         flags |= os.O_APPEND
-    fd = msvcrt.open_osfhandle(h, flags)
+    fd = msvcrt.open_osfhandle(handle, flags)
     return os.fdopen(fd, mode)

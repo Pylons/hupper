@@ -10,11 +10,11 @@ import time
 
 from .compat import (
     ProcessGroup,
-    duplicate_fd,
     interrupt_main,
     is_watchdog_supported,
-    open_fd,
+    recv_fd,
     queue,
+    send_fd,
 )
 from .interfaces import IReloaderProxy
 
@@ -77,12 +77,11 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
     The worker process object also acts as a proxy back to the reloader.
 
     """
-    def __init__(self, worker_path, files_queue, pipes, stdin):
+    def __init__(self, worker_path, files_queue, pipes):
         super(WorkerProcess, self).__init__()
         self.worker_path = worker_path
         self.files_queue = files_queue
         self.pipe, self.parent_pipe = pipes
-        self.stdin = stdin
 
     def run(self):
         # import the worker path
@@ -98,7 +97,7 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
         del self.parent_pipe
 
         # use the stdin fd passed in from the reloader process
-        sys.stdin = open_fd(self.stdin, 'rb')
+        sys.stdin = recv_fd(self.pipe, 'rb')
 
         parent_watcher = WatchForParentShutdown(self.pipe)
         parent_watcher.start()
@@ -186,7 +185,7 @@ class Reloader(object):
         # prepare to close our stdin by making a new copy that is
         # not attached to sys.stdin - we will pass this to the worker while
         # it's running and then restore it when the worker is done
-        stdin = duplicate_fd(sys.stdin.fileno())
+        stdin = os.dup(sys.stdin.fileno())
 
         files_queue = multiprocessing.Queue()
         pipe, worker_pipe = multiprocessing.Pipe()
@@ -194,7 +193,6 @@ class Reloader(object):
             self.worker_path,
             files_queue,
             (worker_pipe, pipe),
-            stdin,
         )
         self.worker.start()
 
@@ -205,9 +203,8 @@ class Reloader(object):
         worker_pipe.close()
         del worker_pipe
 
-        # kill reloader's stdin while the worker is using it
-        # sys.stdin.close()
-        # sys.stdin = open(os.devnull)
+        # send the stdin handle to the worker
+        send_fd(stdin, self.worker.pid, pipe)
 
         self.out("Starting monitor for PID %s." % self.worker.pid)
 
@@ -246,10 +243,6 @@ class Reloader(object):
             self.worker.join()
             self.out('Server with PID %s exited with code %d.' %
                      (self.worker.pid, self.worker.exitcode))
-
-        # restore the reloader's stdin now that worker has stopped using it
-        # sys.stdin.close()
-        # sys.stdin = open_fd(stdin, 'rb')
 
         # restore force_exit, incase it was overwritten by a signal handler
         self.worker_terminated = False

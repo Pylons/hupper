@@ -18,8 +18,8 @@ except ImportError:
 if WIN: # pragma: nocover
     from .winapi import (
         ProcessGroup,
-        duplicate_fd,
-        open_fd,
+        recv_fd,
+        send_fd,
     )
 else:
     class ProcessGroup(object):
@@ -27,10 +27,11 @@ else:
             # nothing to do on *nix
             pass
 
-    def duplicate_fd(fd):
-        return os.dup(fd)
+    def send_fd(fd, pid, pipe):
+        pipe.send(fd)
 
-    def open_fd(fd, mode):
+    def recv_fd(pipe, mode):
+        fd = pipe.recv()
         return os.fdopen(fd, mode)
 
 def is_watchdog_supported():
