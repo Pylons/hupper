@@ -181,14 +181,17 @@ class ProcessGroup(object):
         hp = OpenProcess(ProcessAccessLimit.PROCESS_ALL_ACCESS, False, pid)
         return AssignProcessToJobObject(self.h_job, hp)
 
-def send_fd(fd, pid, pipe):
+
+def send_fd(pipe, fd, pid):
     hf = msvcrt.get_osfhandle(fd)
     hp = OpenProcess(ProcessAccessLimit.PROCESS_ALL_ACCESS, False, pid)
     tp = DuplicateHandle(
         GetCurrentProcess(), hf, hp,
         0, True, DuplicateOption.DUPLICATE_SAME_ACCESS,
     )
+    tp.Detach()  # do not close the handle
     pipe.send(tp)
+
 
 def recv_fd(pipe, mode):
     handle = pipe.recv()

@@ -97,7 +97,7 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
         del self.parent_pipe
 
         # use the stdin fd passed in from the reloader process
-        sys.stdin = recv_fd(self.pipe, 'rb')
+        sys.stdin = recv_fd(self.pipe, 'r')
 
         parent_watcher = WatchForParentShutdown(self.pipe)
         parent_watcher.start()
@@ -204,7 +204,7 @@ class Reloader(object):
         del worker_pipe
 
         # send the stdin handle to the worker
-        send_fd(stdin, self.worker.pid, pipe)
+        send_fd(pipe, stdin, self.worker.pid)
 
         self.out("Starting monitor for PID %s." % self.worker.pid)
 
@@ -243,6 +243,12 @@ class Reloader(object):
             self.worker.join()
             self.out('Server with PID %s exited with code %d.' %
                      (self.worker.pid, self.worker.exitcode))
+
+        try:
+            # release the dup'd stdin, worker is no longer using it
+            os.close(stdin)
+        except: # pragma: nocover
+            pass
 
         # restore force_exit, incase it was overwritten by a signal handler
         self.worker_terminated = False

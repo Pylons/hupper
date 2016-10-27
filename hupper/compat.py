@@ -27,7 +27,7 @@ else:
             # nothing to do on *nix
             pass
 
-    def send_fd(fd, pid, pipe):
+    def send_fd(pipe, fd, pid):
         pipe.send(fd)
 
     def recv_fd(pipe, mode):
