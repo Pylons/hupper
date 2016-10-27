@@ -44,3 +44,11 @@ path in string format. For example, ``myapp.scripts.serve.main``.
             reloader.watch_files(['foo.ini'])
 
         waitress.serve(wsgi_app)
+
+Acknowledgments
+===============
+
+``hupper`` is inspired by initial work done by Carl J Meyer and David Glick
+during a Pycon sprint and is built to be a more robust and generic version of
+Ian Bicking's excellent PasteScript ``paste serve --reload`` and Pyramid's
+``pserve --reload``.
