@@ -12,8 +12,8 @@ from .compat import (
     ProcessGroup,
     interrupt_main,
     is_watchdog_supported,
-    recv_fd,
     queue,
+    recv_fd,
     send_fd,
 )
 from .interfaces import IReloaderProxy

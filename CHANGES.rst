@@ -1,5 +1,7 @@
-unreleased
-==========
+0.2 (2016-10-26)
+================
+
+- Windows support!
 
 - Added support for `watchdog <https://pypi.org/project/watchdog/>`_ if it's
   installed to do inotify-style file monitoring. This is an optional dependency
