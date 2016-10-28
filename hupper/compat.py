@@ -1,9 +1,17 @@
 # flake8: noqa
-import os
+import platform
 import sys
 
 PY2 = sys.version_info[0] == 2
 WIN = sys.platform == 'win32'
+
+OS64 = platform.machine().endswith('64')
+PY64 = sys.maxsize > 2**32
+
+if PY2:
+    long = long
+else:
+    long = int
 
 try:
     import queue
@@ -14,25 +22,6 @@ try:
     from _thread import interrupt_main
 except ImportError:
     from thread import interrupt_main
-
-if WIN: # pragma: nocover
-    from .winapi import (
-        ProcessGroup,
-        recv_fd,
-        send_fd,
-    )
-else:
-    class ProcessGroup(object):
-        def add_child(self, pid):
-            # nothing to do on *nix
-            pass
-
-    def send_fd(pipe, fd, pid):
-        pipe.send(fd)
-
-    def recv_fd(pipe, mode):
-        fd = pipe.recv()
-        return os.fdopen(fd, mode)
 
 def is_watchdog_supported():
     """ Return ``True`` if watchdog is available."""

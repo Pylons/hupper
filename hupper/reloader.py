@@ -9,14 +9,16 @@ import threading
 import time
 
 from .compat import (
-    ProcessGroup,
     interrupt_main,
     is_watchdog_supported,
     queue,
+)
+from .interfaces import IReloaderProxy
+from .ipc import (
+    ProcessGroup,
     recv_fd,
     send_fd,
 )
-from .interfaces import IReloaderProxy
 
 
 class WatchSysModules(threading.Thread):
