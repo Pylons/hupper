@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+env*/
 build/
 develop-eggs/
 dist/
@@ -58,9 +59,5 @@ docs/_build/
 # PyBuilder
 target/
 
-env27
 .idea
 cover
-
-!tests/fake_packages/defaultapp/
-!tests/fake_packages/defaultapp/DefaultApp.egg-info/
