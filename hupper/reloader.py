@@ -66,7 +66,7 @@ class WatchForParentShutdown(threading.Thread):
     def run(self):
         try:
             # wait until the pipe breaks
-            while self.pipe.recv_bytes(): # pragma: nocover
+            while self.pipe.recv_bytes():  # pragma: nocover
                 pass
         except EOFError:
             pass
@@ -86,20 +86,20 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
         self.pipe, self.parent_pipe = pipes
 
     def run(self):
-        # import the worker path
-        modname, funcname = self.worker_path.rsplit('.', 1)
-        module = importlib.import_module(modname)
-        func = getattr(module, funcname)
-
-        poller = WatchSysModules(self.files_queue.put)
-        poller.start()
-
         # close the parent end of the pipe, we aren't using it in the worker
         self.parent_pipe.close()
         del self.parent_pipe
 
         # use the stdin fd passed in from the reloader process
         sys.stdin = recv_fd(self.pipe, 'r')
+
+        # import the worker path before polling sys.modules
+        modname, funcname = self.worker_path.rsplit('.', 1)
+        module = importlib.import_module(modname)
+        func = getattr(module, funcname)
+
+        poller = WatchSysModules(self.files_queue.put)
+        poller.start()
 
         parent_watcher = WatchForParentShutdown(self.pipe)
         parent_watcher.start()
@@ -217,7 +217,7 @@ class Reloader(object):
                     if pipe.poll(0):
                         # do not read, the pipe is closed after the break
                         break
-                except EOFError: # pragma: nocover
+                except EOFError:  # pragma: nocover
                     pass
 
                 try:
@@ -229,7 +229,7 @@ class Reloader(object):
         finally:
             try:
                 pipe.close()
-            except: # pragma: nocover
+            except:  # pragma: nocover
                 pass
 
         self.monitor.clear_changes()
@@ -249,7 +249,7 @@ class Reloader(object):
         try:
             # release the dup'd stdin, worker is no longer using it
             os.close(stdin)
-        except: # pragma: nocover
+        except:  # pragma: nocover
             pass
 
         # restore force_exit, incase it was overwritten by a signal handler
@@ -259,7 +259,7 @@ class Reloader(object):
     def _wait_for_changes(self):
         while (
             not self.monitor.wait_for_change(self.reload_interval)
-        ): # pragma: nocover
+        ):  # pragma: nocover
             pass
 
         self.monitor.clear_changes()
@@ -283,7 +283,7 @@ class Reloader(object):
         try:
             self.worker_terminated = True
             self.worker.terminate()
-        except: # pragma: nocover
+        except:  # pragma: nocover
             pass
 
     def _restore_signals(self):
@@ -331,10 +331,13 @@ def start_reloader(
     if monitor_factory is None:
         if is_watchdog_supported():
             from .watchdog import WatchdogFileMonitor
+
             def monitor_factory():
                 return WatchdogFileMonitor(verbose)
+
         else:
             from .polling import PollingFileMonitor
+
             def monitor_factory():
                 return PollingFileMonitor(reload_interval, verbose)
 

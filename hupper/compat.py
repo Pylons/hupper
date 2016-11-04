@@ -23,6 +23,7 @@ try:
 except ImportError:
     from thread import interrupt_main
 
+
 def is_watchdog_supported():
     """ Return ``True`` if watchdog is available."""
     try:
@@ -31,10 +32,10 @@ def is_watchdog_supported():
         return False
     return True
 
+
 ################################################
 # cross-compatible metaclass implementation
 # Copyright (c) 2010-2012 Benjamin Peterson
-
 def with_metaclass(meta, base=object):
     """Create a base class with a metaclass."""
     return meta("%sBase" % meta.__name__, (base,), {})

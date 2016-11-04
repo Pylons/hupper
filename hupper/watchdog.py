@@ -29,8 +29,8 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
     def on_any_event(self, event):
         path = event.src_path
         if (
-            path in self.paths
-            and path not in self.changed_paths
+            path in self.paths and
+            path not in self.changed_paths
         ):
             self.changed_paths.add(path)
             self.change_event.set()

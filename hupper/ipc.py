@@ -2,10 +2,11 @@ import os
 
 from .compat import WIN
 
-if WIN: # pragma: nocover
+
+if WIN:  # pragma: nocover
     import msvcrt
     from . import winapi
-    
+
     class ProcessGroup(object):
         def __init__(self):
             self.h_job = winapi.CreateJobObject(None, None)
@@ -26,7 +27,6 @@ if WIN: # pragma: nocover
             hp = winapi.OpenProcess(winapi.PROCESS_ALL_ACCESS, False, pid)
             return winapi.AssignProcessToJobObject(self.h_job, hp)
 
-
     def send_fd(pipe, fd, pid):
         hf = msvcrt.get_osfhandle(fd)
         hp = winapi.OpenProcess(winapi.PROCESS_ALL_ACCESS, False, pid)
@@ -35,7 +35,6 @@ if WIN: # pragma: nocover
             0, False, winapi.DUPLICATE_SAME_ACCESS,
         ).Detach()  # do not close the handle
         pipe.send(tp)
-
 
     def recv_fd(pipe, mode):
         handle = pipe.recv()
@@ -48,6 +47,7 @@ if WIN: # pragma: nocover
             flags |= os.O_APPEND
         fd = msvcrt.open_osfhandle(handle, flags)
         return os.fdopen(fd, mode)
+
 else:
     class ProcessGroup(object):
         def add_child(self, pid):

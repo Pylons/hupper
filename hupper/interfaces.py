@@ -2,6 +2,7 @@ import abc
 
 from .compat import with_metaclass
 
+
 class IReloaderProxy(with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def watch_files(self, files):
@@ -12,6 +13,7 @@ class IReloaderProxy(with_metaclass(abc.ABCMeta)):
     def trigger_reload(self):
         """ Signal the monitor to execute a reload."""
         pass
+
 
 class IFileMonitor(with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod

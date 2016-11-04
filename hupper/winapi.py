@@ -129,7 +129,7 @@ def DuplicateHandle(
 def GetCurrentProcess():
     hp = kernel32.GetCurrentProcess()
     return hp
-    
+
 
 def OpenProcess(desiredAccess, inherit, pid):
     hp = kernel32.OpenProcess(desiredAccess, inherit, pid)
