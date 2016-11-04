@@ -159,8 +159,7 @@ class Reloader(object):
         except KeyboardInterrupt:
             return
         finally:
-            if self.monitor:
-                self._stop_monitor()
+            self._stop_monitor()
             self._restore_signals()
 
     def run_once(self):
@@ -177,8 +176,7 @@ class Reloader(object):
         except KeyboardInterrupt:
             return
         finally:
-            if self.monitor:
-                self._stop_monitor()
+            self._stop_monitor()
             self._restore_signals()
 
     def _run_worker(self):
@@ -269,9 +267,10 @@ class Reloader(object):
         self.monitor.start()
 
     def _stop_monitor(self):
-        self.monitor.stop()
-        self.monitor.join()
-        self.monitor = None
+        if self.monitor:
+            self.monitor.stop()
+            self.monitor.join()
+            self.monitor = None
 
     def _capture_signals(self):
         # SIGHUP is not supported on windows
