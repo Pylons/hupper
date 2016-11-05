@@ -13,12 +13,58 @@ from .compat import (
     is_watchdog_supported,
     queue,
 )
-from .interfaces import IReloaderProxy
+from .interfaces import (
+    IFileMonitor,
+    IReloaderProxy,
+)
 from .ipc import (
     ProcessGroup,
     recv_fd,
     send_fd,
 )
+
+
+class FileMonitorProxy(IFileMonitor):
+    def __init__(self, monitor_factory, verbose=1):
+        self.monitor = monitor_factory(self.file_changed)
+        self.verbose = verbose
+        self.change_event = threading.Event()
+        self.lock = threading.Lock()
+        self.changed_paths = set()
+
+    def out(self, msg):
+        if self.verbose > 0:
+            print(msg)
+
+    def add_path(self, path):
+        self.monitor.add_path(path)
+
+    def start(self):
+        self.monitor.start()
+
+    def stop(self):
+        self.monitor.stop()
+
+    def join(self):
+        self.monitor.join()
+
+    def file_changed(self, path):
+        with self.lock:
+            if path not in self.changed_paths:
+                self.change_event.set()
+                self.changed_paths.add(path)
+                self.out('%s changed; reloading ...' % (path,))
+
+    def is_changed(self):
+        return self.change_event.is_set()
+
+    def wait_for_change(self, timeout=None):
+        return self.change_event.wait(timeout)
+
+    def clear_changes(self):
+        with self.lock:
+            self.change_event.clear()
+            self.changed_paths.clear()
 
 
 class WatchSysModules(threading.Thread):
@@ -275,7 +321,7 @@ class Reloader(object):
         self.monitor.clear_changes()
 
     def _start_monitor(self):
-        self.monitor = self.monitor_factory()
+        self.monitor = FileMonitorProxy(self.monitor_factory)
         self.monitor.start()
 
     def _stop_monitor(self):
@@ -343,8 +389,8 @@ def start_reloader(
         if is_watchdog_supported():
             from .watchdog import WatchdogFileMonitor
 
-            def monitor_factory():
-                return WatchdogFileMonitor(verbose)
+            def monitor_factory(callback):
+                return WatchdogFileMonitor(callback)
 
             if verbose > 1:
                 print('File monitor backend: watchdog')
@@ -352,8 +398,8 @@ def start_reloader(
         else:
             from .polling import PollingFileMonitor
 
-            def monitor_factory():
-                return PollingFileMonitor(reload_interval, verbose)
+            def monitor_factory(callback):
+                return PollingFileMonitor(callback, reload_interval)
 
             if verbose > 1:
                 print('File monitor backend: polling')

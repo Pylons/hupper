@@ -27,11 +27,6 @@ class IFileMonitor(with_metaclass(abc.ABCMeta)):
         pass
 
     @abc.abstractmethod
-    def join(self):
-        """ Block until the monitor has stopped."""
-        pass
-
-    @abc.abstractmethod
     def stop(self):
         """ Trigger the monitor to stop.
 
@@ -41,23 +36,6 @@ class IFileMonitor(with_metaclass(abc.ABCMeta)):
         pass
 
     @abc.abstractmethod
-    def is_changed(self):
-        """ Return ``True`` if any files have been changed."""
-        pass
-
-    @abc.abstractmethod
-    def wait_for_change(self, timeout=None):
-        """ Wait until a file has changed or until ``timeout`` seconds.
-
-        If :meth:`.is_changed` is ``True`` then this will return immediately.
-
-        If ``timeout`` is ``None`` then this should block until a file
-        has changed.
-
-        """
-        pass
-
-    @abc.abstractmethod
-    def clear_changes(self):
-        """ Reset :meth:`.is_changed` and :meth:`.wait_for_change`."""
+    def join(self):
+        """ Block until the monitor has stopped."""
         pass

@@ -6,30 +6,24 @@ from .interfaces import IFileMonitor
 
 
 class PollingFileMonitor(threading.Thread, IFileMonitor):
-    def __init__(self, poll_interval=1, verbose=1):
+    def __init__(self, callback, poll_interval=1):
         super(PollingFileMonitor, self).__init__()
+        self.callback = callback
         self.poll_interval = poll_interval
-        self.verbose = verbose
         self.paths = set()
         self.mtimes = {}
         self.lock = threading.Lock()
-        self.change_event = threading.Event()
 
     def add_path(self, path):
         with self.lock:
             self.paths.add(path)
-
-    def out(self, msg):
-        if self.verbose > 0:
-            print(msg)
 
     def run(self):
         self.enabled = True
         while self.enabled:
             with self.lock:
                 paths = list(self.paths)
-            if self.check_reload(paths):
-                self.change_event.set()
+            self.check_reload(paths)
             time.sleep(self.poll_interval)
 
     def stop(self):
@@ -49,19 +43,8 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
             elif self.mtimes[path] < mtime:
                 self.mtimes[path] = mtime
                 changes.add(path)
-        if changes and self.verbose > 0:
-            for path in sorted(changes):
-                self.out('%s changed; reloading ...' % (path,))
-        return len(changes) > 0
-
-    def is_changed(self):
-        return self.change_event.is_set()
-
-    def wait_for_change(self, timeout=None):
-        return self.change_event.wait(timeout)
-
-    def clear_changes(self):
-        self.change_event.clear()
+        if changes:
+            self.callback(changes)
 
 
 def get_mtime(path, raises=False):
