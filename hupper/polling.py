@@ -38,16 +38,12 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
     def check_reload(self, paths):
         changes = set()
         for path in paths:
-            try:
-                stat = os.stat(path)
-                if stat:
-                    mtime = stat.st_mtime
-                else:
-                    mtime = 0
-            except (OSError, IOError):
-                continue
+            mtime = get_mtime(path)
             if path.endswith('.pyc') and os.path.exists(path[:-1]):
-                mtime = max(os.stat(path[:-1]).st_mtime, mtime)
+                # track the py as the canonical file that changed anytime
+                # its pyc file changes
+                path = path[:-1]
+                mtime = max(get_mtime(path), mtime)
             if path not in self.mtimes:
                 self.mtimes[path] = mtime
             elif self.mtimes[path] < mtime:
@@ -66,3 +62,16 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
 
     def clear_changes(self):
         self.change_event.clear()
+
+
+def get_mtime(path, raises=False):
+    try:
+        stat = os.stat(path)
+        if stat:
+            return stat.st_mtime
+        else:
+            return 0
+    except (OSError, IOError):
+        if raises:
+            raise
+        return 0
