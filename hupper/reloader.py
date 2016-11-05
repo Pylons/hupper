@@ -125,11 +125,13 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
     The worker process object also acts as a proxy back to the reloader.
 
     """
-    def __init__(self, worker_path, files_queue, pipes):
+    def __init__(self, worker_path, files_queue, pipes, stdin_fd):
         super(WorkerProcess, self).__init__()
         self.worker_path = worker_path
         self.files_queue = files_queue
         self.pipe, self.parent_pipe = pipes
+        self.stdin_fd = stdin_fd
+        self.terminated = False
 
     def run(self):
         # close the parent end of the pipe, we aren't using it in the worker
@@ -154,12 +156,28 @@ class WorkerProcess(multiprocessing.Process, IReloaderProxy):
         func()
 
     def watch_files(self, files):
-        """ Signal to the parent process to track some custom paths."""
+        """ Signal to the parent process to track some custom paths. """
         for file in files:
             self.files_queue.put(file)
 
     def trigger_reload(self):
+        """ Trigger the parent process to reload. """
         self.pipe.send_bytes(b'1')
+
+    def terminate(self):
+        self.terminated = True
+        super(WorkerProcess, self).terminate()
+
+    def join(self, timeout=None):
+        super(WorkerProcess, self).join(timeout)
+
+        if not self.is_alive() and self.stdin_fd is not None:
+            try:
+                os.close(self.stdin_fd)
+            except:  # pragma: nocover
+                pass
+            finally:
+                self.stdin_fd = None
 
 
 class Reloader(object):
@@ -180,7 +198,6 @@ class Reloader(object):
         self.verbose = verbose
         self.monitor = None
         self.worker = None
-        self.worker_terminated = False
         self.group = ProcessGroup()
 
     def out(self, msg):
@@ -230,20 +247,12 @@ class Reloader(object):
             self._stop_monitor()
             self._restore_signals()
 
-    def _terminate_worker(self):
-        if self.worker:
-            self.out("Killing server with PID %s." % self.worker.pid)
-            self.worker.terminate()
-            self.worker.join()
-            self.worker = None
-
     def _run_worker(self):
-        self.worker_terminated = False
-
         # prepare to close our stdin by making a new copy that is
         # not attached to sys.stdin - we will pass this to the worker while
         # it's running and then restore it when the worker is done
-        stdin = os.dup(sys.stdin.fileno())
+        # we dup it early such that it's inherited by the child
+        stdin_fd = os.dup(sys.stdin.fileno())
 
         files_queue = multiprocessing.Queue()
         pipe, worker_pipe = multiprocessing.Pipe()
@@ -251,6 +260,7 @@ class Reloader(object):
             self.worker_path,
             files_queue,
             (worker_pipe, pipe),
+            stdin_fd,
         )
         self.worker.start()
 
@@ -262,7 +272,7 @@ class Reloader(object):
         del worker_pipe
 
         # send the stdin handle to the worker
-        send_fd(pipe, stdin, self.worker.pid)
+        send_fd(pipe, stdin_fd, self.worker.pid)
 
         self.out("Starting monitor for PID %s." % self.worker.pid)
         self.monitor.clear_changes()
@@ -290,25 +300,24 @@ class Reloader(object):
                 pass
 
         self.monitor.clear_changes()
+        force_exit = self._terminate_worker()
+        return force_exit
 
-        force_exit = self.worker_terminated
+    def _terminate_worker(self):
+        if not self.worker:
+            return False
+
         if self.worker.is_alive():
-            self._terminate_worker()
-            force_exit = True
+            self.out("Killing server with PID %s." % self.worker.pid)
+            self.worker.terminate()
+            self.worker.join()
 
         else:
             self.worker.join()
             self.out('Server with PID %s exited with code %d.' %
                      (self.worker.pid, self.worker.exitcode))
 
-        try:
-            # release the dup'd stdin, worker is no longer using it
-            os.close(stdin)
-        except:  # pragma: nocover
-            pass
-
-        # restore force_exit, incase it was overwritten by a signal handler
-        self.worker_terminated = False
+        force_exit = self.worker.terminated
         self.worker = None
         return force_exit
 
@@ -321,7 +330,7 @@ class Reloader(object):
         self.monitor.clear_changes()
 
     def _start_monitor(self):
-        self.monitor = FileMonitorProxy(self.monitor_factory)
+        self.monitor = FileMonitorProxy(self.monitor_factory, self.verbose)
         self.monitor.start()
 
     def _stop_monitor(self):
@@ -338,7 +347,6 @@ class Reloader(object):
     def _signal_sighup(self, signum, frame):
         self.out('Received SIGHUP, triggering a reload.')
         try:
-            self.worker_terminated = True
             self.worker.terminate()
         except:  # pragma: nocover
             pass
