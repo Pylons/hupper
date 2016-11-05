@@ -24,6 +24,10 @@ from .ipc import (
 )
 
 
+# set when the current process is being monitored
+_reloader_proxy = None
+
+
 class FileMonitorProxy(IFileMonitor):
     def __init__(self, monitor_factory, verbose=1):
         self.monitor = monitor_factory(self.file_changed)
@@ -48,12 +52,13 @@ class FileMonitorProxy(IFileMonitor):
     def join(self):
         self.monitor.join()
 
-    def file_changed(self, path):
+    def file_changed(self, paths):
         with self.lock:
-            if path not in self.changed_paths:
-                self.change_event.set()
-                self.changed_paths.add(path)
-                self.out('%s changed; reloading ...' % (path,))
+            for path in sorted(paths):
+                if path not in self.changed_paths:
+                    self.change_event.set()
+                    self.changed_paths.add(path)
+                    self.out('%s changed; reloading ...' % (path,))
 
     def is_changed(self):
         return self.change_event.is_set()
@@ -119,65 +124,118 @@ class WatchForParentShutdown(threading.Thread):
         interrupt_main()
 
 
-class WorkerProcess(multiprocessing.Process, IReloaderProxy):
+class ReloaderProxy(IReloaderProxy):
+    def __init__(self, files_queue, pipe):
+        self.files_queue = files_queue
+        self.pipe = pipe
+
+    def watch_files(self, files):
+        for file in files:
+            self.files_queue.put(file)
+
+    def trigger_reload(self):
+        self.pipe.send_bytes(b'1')
+
+
+def worker_main(spec, files_queue, pipe, parent_pipe):
+    # close the parent end of the pipe, we aren't using it in the worker
+    parent_pipe.close()
+    del parent_pipe
+
+    # use the stdin fd passed in from the reloader process
+    sys.stdin = recv_fd(pipe, 'r')
+
+    # import the worker path before polling sys.modules
+    modname, funcname = spec.rsplit('.', 1)
+    module = importlib.import_module(modname)
+    func = getattr(module, funcname)
+
+    poller = WatchSysModules(files_queue.put)
+    poller.start()
+
+    parent_watcher = WatchForParentShutdown(pipe)
+    parent_watcher.start()
+
+    global _reloader_proxy
+    _reloader_proxy = ReloaderProxy(files_queue, pipe)
+
+    # start the worker
+    func()
+
+
+class Worker(object):
     """ The process responsible for handling the worker.
 
     The worker process object also acts as a proxy back to the reloader.
 
     """
-    def __init__(self, worker_path, files_queue, pipes, stdin_fd):
-        super(WorkerProcess, self).__init__()
+    def __init__(self, worker_path):
+        super(Worker, self).__init__()
         self.worker_path = worker_path
-        self.files_queue = files_queue
-        self.pipe, self.parent_pipe = pipes
-        self.stdin_fd = stdin_fd
+        self.files_queue = multiprocessing.Queue()
+        self.pipe, self._c2p = multiprocessing.Pipe()
         self.terminated = False
+        self.pid = None
+        self.exitcode = None
 
-    def run(self):
-        # close the parent end of the pipe, we aren't using it in the worker
-        self.parent_pipe.close()
-        del self.parent_pipe
+    def start(self):
+        # prepare to close our stdin by making a new copy that is
+        # not attached to sys.stdin - we will pass this to the worker while
+        # it's running and then restore it when the worker is done
+        # we dup it early such that it's inherited by the child
+        self.stdin_fd = os.dup(sys.stdin.fileno())
 
-        # use the stdin fd passed in from the reloader process
-        sys.stdin = recv_fd(self.pipe, 'r')
+        kw = dict(
+            spec=self.worker_path,
+            files_queue=self.files_queue,
+            pipe=self._c2p,
+            parent_pipe=self.pipe,
+        )
+        self.process = multiprocessing.Process(target=worker_main, kwargs=kw)
+        self.process.start()
 
-        # import the worker path before polling sys.modules
-        modname, funcname = self.worker_path.rsplit('.', 1)
-        module = importlib.import_module(modname)
-        func = getattr(module, funcname)
+        self.pid = self.process.pid
 
-        poller = WatchSysModules(self.files_queue.put)
-        poller.start()
+        # we no longer control the worker's end of the pipe
+        self._c2p.close()
+        del self._c2p
 
-        parent_watcher = WatchForParentShutdown(self.pipe)
-        parent_watcher.start()
+        # send the stdin handle to the worker
+        send_fd(self.pipe, self.stdin_fd, self.pid)
 
-        # start the worker
-        func()
-
-    def watch_files(self, files):
-        """ Signal to the parent process to track some custom paths. """
-        for file in files:
-            self.files_queue.put(file)
-
-    def trigger_reload(self):
-        """ Trigger the parent process to reload. """
-        self.pipe.send_bytes(b'1')
+    def is_alive(self):
+        if self.process:
+            return self.process.is_alive()
+        return False
 
     def terminate(self):
         self.terminated = True
-        super(WorkerProcess, self).terminate()
+        self.process.terminate()
 
     def join(self, timeout=None):
-        super(WorkerProcess, self).join(timeout)
+        self.process.join()
 
-        if not self.is_alive() and self.stdin_fd is not None:
+        if self.process.is_alive():
+            # the join timed out
+            return
+
+        self.exitcode = self.process.exitcode
+
+        if self.stdin_fd is not None:
             try:
                 os.close(self.stdin_fd)
             except:  # pragma: nocover
                 pass
             finally:
                 self.stdin_fd = None
+
+        if self.pipe is not None:
+            try:
+                self.pipe.close()
+            except:  # pragma: nocover
+                pass
+            finally:
+                self.pipe = None
 
 
 class Reloader(object):
@@ -224,7 +282,6 @@ class Reloader(object):
         except KeyboardInterrupt:
             pass
         finally:
-            self._terminate_worker()
             self._stop_monitor()
             self._restore_signals()
         sys.exit(1)
@@ -243,85 +300,56 @@ class Reloader(object):
         except KeyboardInterrupt:
             return
         finally:
-            self._terminate_worker()
             self._stop_monitor()
             self._restore_signals()
 
     def _run_worker(self):
-        # prepare to close our stdin by making a new copy that is
-        # not attached to sys.stdin - we will pass this to the worker while
-        # it's running and then restore it when the worker is done
-        # we dup it early such that it's inherited by the child
-        stdin_fd = os.dup(sys.stdin.fileno())
-
-        files_queue = multiprocessing.Queue()
-        pipe, worker_pipe = multiprocessing.Pipe()
-        self.worker = WorkerProcess(
-            self.worker_path,
-            files_queue,
-            (worker_pipe, pipe),
-            stdin_fd,
-        )
+        self.worker = Worker(self.worker_path)
         self.worker.start()
 
-        # register the worker with the process group
-        self.group.add_child(self.worker.pid)
-
-        # we no longer control the worker's end of the pipe
-        worker_pipe.close()
-        del worker_pipe
-
-        # send the stdin handle to the worker
-        send_fd(pipe, stdin_fd, self.worker.pid)
-
-        self.out("Starting monitor for PID %s." % self.worker.pid)
-        self.monitor.clear_changes()
-
         try:
+            # register the worker with the process group
+            self.group.add_child(self.worker.pid)
+
+            self.out("Starting monitor for PID %s." % self.worker.pid)
+            self.monitor.clear_changes()
+
             while not self.monitor.is_changed() and self.worker.is_alive():
                 try:
                     # if the child has sent any data then restart
-                    if pipe.poll(0):
+                    if self.worker.pipe.poll(0):
                         # do not read, the pipe is closed after the break
                         break
                 except EOFError:  # pragma: nocover
                     pass
 
                 try:
-                    path = files_queue.get(timeout=self.reload_interval)
+                    path = self.worker.files_queue.get(
+                        timeout=self.reload_interval,
+                    )
                 except queue.Empty:
                     pass
                 else:
                     self.monitor.add_path(path)
         finally:
-            try:
-                pipe.close()
-            except:  # pragma: nocover
-                pass
+            if self.worker.is_alive():
+                self.out("Killing server with PID %s." % self.worker.pid)
+                self.worker.terminate()
+                self.worker.join()
+
+            else:
+                self.worker.join()
+                self.out('Server with PID %s exited with code %d.' %
+                         (self.worker.pid, self.worker.exitcode))
 
         self.monitor.clear_changes()
-        force_exit = self._terminate_worker()
-        return force_exit
-
-    def _terminate_worker(self):
-        if not self.worker:
-            return False
-
-        if self.worker.is_alive():
-            self.out("Killing server with PID %s." % self.worker.pid)
-            self.worker.terminate()
-            self.worker.join()
-
-        else:
-            self.worker.join()
-            self.out('Server with PID %s exited with code %d.' %
-                     (self.worker.pid, self.worker.exitcode))
 
         force_exit = self.worker.terminated
         self.worker = None
         return force_exit
 
     def _wait_for_changes(self):
+        self.out('Waiting for changes before reloading.')
         while (
             not self.monitor.wait_for_change(self.reload_interval)
         ):  # pragma: nocover
@@ -345,11 +373,9 @@ class Reloader(object):
             signal.signal(signal.SIGHUP, self._signal_sighup)
 
     def _signal_sighup(self, signum, frame):
-        self.out('Received SIGHUP, triggering a reload.')
-        try:
+        if self.worker:
+            self.out('Received SIGHUP, triggering a reload.')
             self.worker.terminate()
-        except:  # pragma: nocover
-            pass
 
     def _restore_signals(self):
         if hasattr(signal, 'SIGHUP'):
@@ -381,9 +407,8 @@ def start_reloader(
     ``verbose`` controls the output. Set to ``0`` to turn off any logging
     of activity and turn up to ``2`` for extra output.
 
-    ``monitor_factory`` must be a callable that returns an instance of
-    :class:`hupper.interfaces.IFileMonitor` which will be used to monitor
-    for file changes. By default, this will try to create a
+    ``monitor_factory`` is a :class:`hupper.interfaces.IFileMonitorFactory`.
+    If left unspecified, this will try to create a
     :class:`hupper.watchdog.WatchdogFileMonitor` if
     `watchdog <https://pypi.org/project/watchdog/>`_ is installed and will
     fallback to the less efficient
@@ -429,10 +454,9 @@ def get_reloader():
     monitored by a parent process.
 
     """
-    p = multiprocessing.current_process()
-    if not isinstance(p, IReloaderProxy):
+    if _reloader_proxy is None:
         raise RuntimeError('process is not controlled by hupper')
-    return p
+    return _reloader_proxy
 
 
 def is_active():

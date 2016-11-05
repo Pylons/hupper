@@ -26,4 +26,4 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
     def on_any_event(self, event):
         path = event.src_path
         if path in self.paths:
-            self.callback(path)
+            self.callback([path])

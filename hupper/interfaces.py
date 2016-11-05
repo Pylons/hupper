@@ -7,24 +7,31 @@ class IReloaderProxy(with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def watch_files(self, files):
         """ Signal to the monitor to track some custom paths."""
-        pass
 
     @abc.abstractmethod
     def trigger_reload(self):
         """ Signal the monitor to execute a reload."""
-        pass
+
+
+class IFileMonitorFactory(with_metaclass(abc.ABCMeta)):
+    def __call__(self, callback):
+        """ Return a :class:`.IFileMonitor` instance.
+
+        ``callback`` is a callable to be invoked by the ``IFileMonitor``
+        when file changes are detected. It should accept a list of paths
+        that were changed.
+
+        """
 
 
 class IFileMonitor(with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def add_path(self, path):
         """ Start monitoring a new path."""
-        pass
 
     @abc.abstractmethod
     def start(self):
         """ Start the monitor. This method should not block."""
-        pass
 
     @abc.abstractmethod
     def stop(self):
@@ -33,9 +40,7 @@ class IFileMonitor(with_metaclass(abc.ABCMeta)):
         This should be called before invoking :meth:`.join`.
 
         """
-        pass
 
     @abc.abstractmethod
     def join(self):
         """ Block until the monitor has stopped."""
-        pass
