@@ -20,7 +20,7 @@ from .worker import (
 
 class FileMonitorProxy(IFileMonitor):
     def __init__(self, monitor_factory, verbose=1):
-        self.monitor = monitor_factory(self.file_changed)
+        self.monitor = monitor_factory(self.files_changed)
         self.verbose = verbose
         self.change_event = threading.Event()
         self.lock = threading.Lock()
@@ -31,6 +31,10 @@ class FileMonitorProxy(IFileMonitor):
             print(msg)
 
     def add_path(self, path):
+        if (
+            path.startswith('/Users/michael/work/oss/hupper')
+        ):
+            print(path)
         self.monitor.add_path(path)
 
     def start(self):
@@ -42,7 +46,7 @@ class FileMonitorProxy(IFileMonitor):
     def join(self):
         self.monitor.join()
 
-    def file_changed(self, paths):
+    def files_changed(self, paths):
         with self.lock:
             for path in sorted(paths):
                 if path not in self.changed_paths:
@@ -157,7 +161,7 @@ class Reloader(object):
                     self.monitor.add_path(path)
         finally:
             if self.worker.is_alive():
-                self.out("Killing server with PID %s." % self.worker.pid)
+                self.out('Killing server with PID %s.' % self.worker.pid)
                 self.worker.terminate()
                 self.worker.join()
 
