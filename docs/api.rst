@@ -25,6 +25,9 @@
   .. autoclass:: IFileMonitor
     :members:
 
+  .. autoclass:: IFileMonitorFactory
+    :members:
+
 .. automodule:: hupper.polling
 
   .. autoclass:: PollingFileMonitor
