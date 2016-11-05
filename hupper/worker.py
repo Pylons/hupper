@@ -66,9 +66,7 @@ class WatchForParentShutdown(threading.Thread):
 
 
 class Worker(object):
-    """ The process responsible for handling the worker.
-
-    The worker process object also acts as a proxy back to the reloader.
+    """ A helper object for managing a worker process lifecycle.
 
     """
     def __init__(self, worker_path):
