@@ -84,7 +84,7 @@ class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
     ]
 
 
-class Handle(long):
+class Handle(wintypes.HANDLE):
     closed = False
 
     def Close(self):
@@ -95,11 +95,11 @@ class Handle(long):
     def Detach(self):
         if not self.closed:
             self.closed = True
-            return long(self)
+            return self.value
         raise ValueError("already closed")
 
     def __repr__(self):
-        return "%s(%d)" % (self.__class__.__name__, long(self))
+        return "%s(%d)" % (self.__class__.__name__, self.value)
 
     __del__ = Close
     __str__ = __repr__
@@ -128,7 +128,7 @@ def DuplicateHandle(
 
 def GetCurrentProcess():
     hp = kernel32.GetCurrentProcess()
-    return hp
+    return Handle(hp)
 
 
 def OpenProcess(desiredAccess, inherit, pid):
