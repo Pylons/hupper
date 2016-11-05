@@ -219,6 +219,7 @@ class Reloader(object):
         send_fd(pipe, stdin, self.worker.pid)
 
         self.out("Starting monitor for PID %s." % self.worker.pid)
+        self.monitor.clear_changes()
 
         try:
             while not self.monitor.is_changed() and self.worker.is_alive():
