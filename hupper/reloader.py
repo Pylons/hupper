@@ -145,6 +145,8 @@ class Reloader(object):
         """
         Execute the reloader forever, blocking the current thread.
 
+        This will invoke ``sys.exit(1)`` if interrupted.
+
         """
         self._capture_signals()
         self._start_monitor()
@@ -157,11 +159,12 @@ class Reloader(object):
                 if debounce > 0:
                     time.sleep(debounce)
         except KeyboardInterrupt:
-            return
+            pass
         finally:
             self._terminate_worker()
             self._stop_monitor()
             self._restore_signals()
+        sys.exit(1)
 
     def run_once(self):
         """
