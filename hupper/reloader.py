@@ -346,11 +346,17 @@ def start_reloader(
             def monitor_factory():
                 return WatchdogFileMonitor(verbose)
 
+            if verbose > 1:
+                print('File monitor backend: watchdog')
+
         else:
             from .polling import PollingFileMonitor
 
             def monitor_factory():
                 return PollingFileMonitor(reload_interval, verbose)
+
+            if verbose > 1:
+                print('File monitor backend: polling')
 
     reloader = Reloader(
         worker_path=worker_path,
