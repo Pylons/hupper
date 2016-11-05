@@ -159,6 +159,7 @@ class Reloader(object):
         except KeyboardInterrupt:
             return
         finally:
+            self._terminate_worker()
             self._stop_monitor()
             self._restore_signals()
 
@@ -176,8 +177,16 @@ class Reloader(object):
         except KeyboardInterrupt:
             return
         finally:
+            self._terminate_worker()
             self._stop_monitor()
             self._restore_signals()
+
+    def _terminate_worker(self):
+        if self.worker:
+            self.out("Killing server with PID %s." % self.worker.pid)
+            self.worker.terminate()
+            self.worker.join()
+            self.worker = None
 
     def _run_worker(self):
         self.worker_terminated = False
@@ -234,9 +243,7 @@ class Reloader(object):
 
         force_exit = self.worker_terminated
         if self.worker.is_alive():
-            self.out("Killing server with PID %s." % self.worker.pid)
-            self.worker.terminate()
-            self.worker.join()
+            self._terminate_worker()
             force_exit = True
 
         else:
@@ -252,6 +259,7 @@ class Reloader(object):
 
         # restore force_exit, incase it was overwritten by a signal handler
         self.worker_terminated = False
+        self.worker = None
         return force_exit
 
     def _wait_for_changes(self):
