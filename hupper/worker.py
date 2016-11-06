@@ -105,6 +105,12 @@ class Worker(object):
         # we dup it early such that it's inherited by the child
         self.stdin_fd = os.dup(sys.stdin.fileno())
 
+        # py34 and above sets CLOEXEC automatically on file descriptors
+        # NOTE: this isn't usually an issue because multiprocessing doesn't
+        # actually exec on linux/macos, but we're depending on the behavior
+        if hasattr(os, 'set_inheritable'):  # pragma: nocover
+            os.set_inheritable(self.stdin_fd, True)
+
         kw = dict(
             spec=self.worker_path,
             files_queue=self.files_queue,
