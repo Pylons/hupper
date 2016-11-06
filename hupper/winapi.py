@@ -1,8 +1,6 @@
 import ctypes
 from ctypes import wintypes
 
-from .compat import long
-
 kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 
 if ctypes.sizeof(ctypes.c_void_p) == 8:
