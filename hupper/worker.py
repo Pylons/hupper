@@ -66,9 +66,7 @@ class WatchForParentShutdown(threading.Thread):
 
 
 class Worker(object):
-    """ A helper object for managing a worker process lifecycle.
-
-    """
+    """ A helper object for managing a worker process lifecycle. """
     def __init__(self, worker_path):
         super(Worker, self).__init__()
         self.worker_path = worker_path
@@ -143,8 +141,8 @@ _reloader_proxy = None
 
 
 def get_reloader():
-    """ Get a reference to the current
-    :class:`hupper.interfaces.IReloaderProxy`.
+    """
+    Get a reference to the current :class:`hupper.interfaces.IReloaderProxy`.
 
     Raises a ``RuntimeError`` if the current process is not actively being
     monitored by a parent process.

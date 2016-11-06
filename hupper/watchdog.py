@@ -10,7 +10,8 @@ from .interfaces import IFileMonitor
 
 
 class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
-    """ An :class:`hupper.interfaces.IFileMonitor` that uses ``watchdog``
+    """
+    An :class:`hupper.interfaces.IFileMonitor` that uses ``watchdog``
     to watch for file changes uses inotify.
 
     ``callback`` is a callable that accepts a path to a changed file.

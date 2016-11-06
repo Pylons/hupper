@@ -6,8 +6,9 @@ from .interfaces import IFileMonitor
 
 
 class PollingFileMonitor(threading.Thread, IFileMonitor):
-    """ An :class:`hupper.interfaces.IFileMonitor` that stats the files
-    a periodic intervals.
+    """
+    An :class:`hupper.interfaces.IFileMonitor` that stats the files
+    at periodic intervals.
 
     ``callback`` is a callable that accepts a path to a changed file.
 
