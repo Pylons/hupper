@@ -1,3 +1,23 @@
+0.3 (2016-11-06)
+================
+
+- Disable bytecode compiling of files imported by the worker process. This
+  should not be necessary when developing and it was causing the process to
+  restart twice on Windows due to how it handles pyc timestamps.
+
+- Fix hupper's support for forwarding stdin to the worker processes on
+  Python < 3.5 on Windows.
+
+- Fix some possible file descriptor leakage.
+
+- Simplify the ``hupper.interfaces.IFileMonitor`` interface by internalizing
+  some of the hupper-specific integrations. They can now focus on just
+  looking for changes.
+
+- Add the ``hupper.interfaces.IFileMonitorFactory`` interface to improve
+  the documentation for the ``callback`` argument required by
+  ``hupper.interfaces.IFileMonitor``.
+
 0.2 (2016-10-26)
 ================
 
