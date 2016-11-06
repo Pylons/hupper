@@ -188,6 +188,10 @@ def worker_main(spec, files_queue, pipe, parent_pipe):
     # use the stdin fd passed in from the reloader process
     sys.stdin = recv_fd(pipe, 'r')
 
+    # disable pyc files for project code because it can cause timestamp
+    # issues in which files are reloaded twice
+    sys.dont_write_bytecode = True
+
     # import the worker path before polling sys.modules
     modname, funcname = spec.rsplit('.', 1)
     module = importlib.import_module(modname)
