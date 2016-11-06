@@ -138,13 +138,8 @@ class Worker(object):
         self.terminated = True
         self.process.terminate()
 
-    def join(self, timeout=None):
+    def join(self):
         self.process.join()
-
-        if self.process.is_alive():
-            # the join timed out
-            return
-
         self.exitcode = self.process.exitcode
 
         if self.stdin_fd is not None:
