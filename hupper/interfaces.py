@@ -18,8 +18,8 @@ class IFileMonitorFactory(with_metaclass(abc.ABCMeta)):
         """ Return an :class:`.IFileMonitor` instance.
 
         ``callback`` is a callable to be invoked by the ``IFileMonitor``
-        when file changes are detected. It should accept a list of paths
-        that were changed.
+        when file changes are detected. It should accept the path of
+        the changed file as its only parameter.
 
         """
 

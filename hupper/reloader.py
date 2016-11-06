@@ -20,10 +20,9 @@ from .worker import (
 
 class FileMonitorProxy(IFileMonitor):
     def __init__(self, monitor_factory, verbose=1):
-        self.monitor = monitor_factory(self.files_changed)
+        self.monitor = monitor_factory(self.file_changed)
         self.verbose = verbose
         self.change_event = threading.Event()
-        self.lock = threading.Lock()
         self.changed_paths = set()
 
     def out(self, msg):
@@ -42,13 +41,11 @@ class FileMonitorProxy(IFileMonitor):
     def join(self):
         self.monitor.join()
 
-    def files_changed(self, paths):
-        with self.lock:
-            for path in sorted(paths):
-                if path not in self.changed_paths:
-                    self.change_event.set()
-                    self.changed_paths.add(path)
-                    self.out('%s changed; reloading ...' % (path,))
+    def file_changed(self, path):
+        if path not in self.changed_paths:
+            self.changed_paths.add(path)
+            self.out('%s changed; reloading ...' % (path,))
+        self.change_event.set()
 
     def is_changed(self):
         return self.change_event.is_set()
@@ -57,9 +54,8 @@ class FileMonitorProxy(IFileMonitor):
         return self.change_event.wait(timeout)
 
     def clear_changes(self):
-        with self.lock:
-            self.change_event.clear()
-            self.changed_paths.clear()
+        self.change_event.clear()
+        self.changed_paths.clear()
 
 
 class Reloader(object):
@@ -97,12 +93,9 @@ class Reloader(object):
         self._start_monitor()
         try:
             while True:
-                start = time.time()
                 if not self._run_worker():
                     self._wait_for_changes()
-                debounce = self.reload_interval - (time.time() - start)
-                if debounce > 0:
-                    time.sleep(debounce)
+                time.sleep(self.reload_interval)
         except KeyboardInterrupt:
             pass
         finally:
