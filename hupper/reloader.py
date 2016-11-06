@@ -213,7 +213,8 @@ def start_reloader(
 
     If this function is called from a worker process that is already being
     monitored then it will return a reference to the current
-    :class:`.ReloaderProxy` which can be used to communicate with the monitor.
+    :class:`hupper.interfaces.IReloaderProxy` which can be used to
+    communicate with the monitor.
 
     ``worker_path`` must be a dotted string pointing to a globally importable
     function that will be executed to start the worker. An example could be
