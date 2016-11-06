@@ -9,7 +9,7 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
     """ An :class:`hupper.interfaces.IFileMonitor` that stats the files
     a periodic intervals.
 
-    ``callback`` is a callable that accepts a list of paths that changed.
+    ``callback`` is a callable that accepts a path to a changed file.
 
     ``poll_interval`` is a value in seconds between scans of the files on
     disk. Do not set this too low or it will eat your CPU and kill your drive.

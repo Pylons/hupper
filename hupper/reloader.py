@@ -9,7 +9,6 @@ from .compat import (
     is_watchdog_supported,
     queue,
 )
-from .interfaces import IFileMonitor
 from .ipc import ProcessGroup
 from .worker import (
     Worker,
@@ -18,7 +17,13 @@ from .worker import (
 )
 
 
-class FileMonitorProxy(IFileMonitor):
+class FileMonitorProxy(object):
+    """
+    Wrap an :class:`hupper.interfaces.IFileMonitor` into an object that
+    exposes a thread-safe interface back to the reloader to detect
+    when it should reload.
+
+    """
     def __init__(self, monitor_factory, verbose=1):
         self.monitor = monitor_factory(self.file_changed)
         self.verbose = verbose
@@ -37,8 +42,6 @@ class FileMonitorProxy(IFileMonitor):
 
     def stop(self):
         self.monitor.stop()
-
-    def join(self):
         self.monitor.join()
 
     def file_changed(self, path):
@@ -181,7 +184,6 @@ class Reloader(object):
     def _stop_monitor(self):
         if self.monitor:
             self.monitor.stop()
-            self.monitor.join()
             self.monitor = None
 
     def _capture_signals(self):
