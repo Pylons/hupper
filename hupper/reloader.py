@@ -235,9 +235,9 @@ def start_reloader(
     ``verbose`` controls the output. Set to ``0`` to turn off any logging
     of activity and turn up to ``2`` for extra output.
 
-    ``monitor_factory`` is a :class:`hupper.interfaces.IFileMonitorFactory`.
-    If left unspecified, this will try to create a
-    :class:`hupper.watchdog.WatchdogFileMonitor` if
+    ``monitor_factory`` is an instance of
+    :class:`hupper.interfaces.IFileMonitorFactory`. If left unspecified, this
+    will try to create a :class:`hupper.watchdog.WatchdogFileMonitor` if
     `watchdog <https://pypi.org/project/watchdog/>`_ is installed and will
     fallback to the less efficient
     :class:`hupper.polling.PollingFileMonitor` otherwise.

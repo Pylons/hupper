@@ -6,6 +6,15 @@ from .interfaces import IFileMonitor
 
 
 class PollingFileMonitor(threading.Thread, IFileMonitor):
+    """ An :class:`hupper.interfaces.IFileMonitor` that stats the files
+    a periodic intervals.
+
+    ``callback`` is a callable that accepts a list of paths that changed.
+
+    ``poll_interval`` is a value in seconds between scans of the files on
+    disk. Do not set this too low or it will eat your CPU and kill your drive.
+
+    """
     def __init__(self, callback, poll_interval=1):
         super(PollingFileMonitor, self).__init__()
         self.callback = callback

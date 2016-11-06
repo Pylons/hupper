@@ -15,7 +15,7 @@ class IReloaderProxy(with_metaclass(abc.ABCMeta)):
 
 class IFileMonitorFactory(with_metaclass(abc.ABCMeta)):
     def __call__(self, callback):
-        """ Return a :class:`.IFileMonitor` instance.
+        """ Return an :class:`.IFileMonitor` instance.
 
         ``callback`` is a callable to be invoked by the ``IFileMonitor``
         when file changes are detected. It should accept a list of paths

@@ -21,17 +21,22 @@
 
   .. autoclass:: IReloaderProxy
     :members:
+    :special-members:
 
   .. autoclass:: IFileMonitor
     :members:
+    :special-members:
 
   .. autoclass:: IFileMonitorFactory
     :members:
+    :special-members:
 
 .. automodule:: hupper.polling
 
   .. autoclass:: PollingFileMonitor
+     :members:
 
 .. automodule:: hupper.watchdog
 
   .. autoclass:: WatchdogFileMonitor
+     :members:

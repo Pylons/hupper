@@ -10,6 +10,12 @@ from .interfaces import IFileMonitor
 
 
 class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
+    """ An :class:`hupper.interfaces.IFileMonitor` that uses ``watchdog``
+    to watch for file changes uses inotify.
+
+    ``callback`` is a callable that accepts a list of paths that changed.
+
+    """
     def __init__(self, callback):
         super(WatchdogFileMonitor, self).__init__()
         self.callback = callback
