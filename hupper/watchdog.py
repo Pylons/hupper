@@ -35,13 +35,6 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
 
     def on_any_event(self, event):
         with self.lock:
-            src_path = event.src_path
-            dep_paths = [src_path]
-            if src_path.endswith('.pyc'):
-                dep_paths.append(src_path[:-1])
-            elif src_path.endswith('.py'):
-                dep_paths.append(src_path + 'c')
-            for path in dep_paths:
-                if path in self.paths:
-                    self.callback(src_path)
-                    break
+            path = event.src_path
+            if path in self.paths:
+                self.callback(path)

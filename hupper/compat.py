@@ -1,4 +1,6 @@
 # flake8: noqa
+import imp
+import importlib
 import platform
 import sys
 
@@ -22,6 +24,25 @@ try:
     from _thread import interrupt_main
 except ImportError:
     from thread import interrupt_main
+
+
+try:
+    import importlib.util as imputil
+except ImportError:
+    imputil = None
+
+if imputil:
+    get_pyc_path = imputil.cache_from_source
+    get_py_path = imputil.source_from_cache
+
+elif PY2:
+    get_pyc_path = lambda path: path + 'c'
+    get_py_path = lambda path: path[:-1]
+
+# fallback on python < 3.5
+else:
+    get_pyc_path = imp.cache_from_source
+    get_py_path = imp.source_from_cache
 
 
 def is_watchdog_supported():

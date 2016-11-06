@@ -40,21 +40,9 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
         self.enabled = False
 
     def check_reload(self, paths):
-        # if it's a python file then we could pyc and py as equivalent
-        # and take the maximum mtime from both... we also update mtime
-        # for both just incase both files are being tracked so that we
-        # avoid counting both the first and second file as being changed
         changes = set()
         for path in paths:
             mtime = get_mtime(path)
-            if path.endswith('.pyc'):
-                py_path = path[:-1]
-                mtime = max(get_mtime(py_path), mtime)
-                self.mtimes[py_path] = mtime
-            elif path.endswith('.py'):
-                pyc_path = path + 'c'
-                mtime = max(get_mtime(pyc_path), mtime)
-                self.mtimes[pyc_path] = mtime
             if path not in self.mtimes:
                 self.mtimes[path] = mtime
             elif self.mtimes[path] < mtime:

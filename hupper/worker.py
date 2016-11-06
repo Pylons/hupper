@@ -5,7 +5,11 @@ import sys
 import threading
 import time
 
-from .compat import interrupt_main
+from .compat import (
+    interrupt_main,
+    get_pyc_path,
+    get_py_path,
+)
 from .interfaces import IReloaderProxy
 from .ipc import (
     recv_fd,
@@ -29,19 +33,37 @@ class WatchSysModules(threading.Thread):
 
     def update_paths(self):
         """Check sys.modules for paths to add to our path set."""
-        for path in get_module_paths():
+        for path in iter_source_paths(iter_module_paths()):
             if path not in self.paths:
                 self.paths.add(path)
                 self.callback(path)
 
 
-def get_module_paths(modules=None):
-    """Yield paths of all imported modules."""
+def iter_source_paths(paths):
+    """ Convert pyc files into their source equivalents."""
+    for src_path in paths:
+        yield src_path
+
+        # track pyc files for py files
+        if src_path.endswith('.py'):
+            pyc_path = get_pyc_path(src_path)
+            if pyc_path:
+                yield pyc_path
+
+        # track py files for pyc files
+        elif src_path.endswith('.pyc'):
+            py_path = get_py_path(src_path)
+            if py_path:
+                yield py_path
+
+
+def iter_module_paths(modules=None):
+    """ Yield paths of all imported modules."""
     modules = modules or list(sys.modules.values())
     for module in modules:
         try:
             filename = module.__file__
-        except (AttributeError, ImportError):
+        except (AttributeError, ImportError):  # pragma: nocover
             continue
         if filename is not None:
             abs_filename = os.path.abspath(filename)
