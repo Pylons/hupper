@@ -31,10 +31,6 @@ class FileMonitorProxy(IFileMonitor):
             print(msg)
 
     def add_path(self, path):
-        if (
-            path.startswith('/Users/michael/work/oss/hupper')
-        ):
-            print(path)
         self.monitor.add_path(path)
 
     def start(self):
