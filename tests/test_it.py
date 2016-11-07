@@ -8,7 +8,7 @@ def test_myapp_reloads():
     try:
         time.sleep(1)
         util.touch('myapp/foo.ini')
-        time.sleep(2)
+        time.sleep(3)
     finally:
         app.stop()
 
