@@ -8,8 +8,9 @@ def test_myapp_reloads():
     try:
         time.sleep(1)
         util.touch('myapp/foo.ini')
-        time.sleep(3)
+        time.sleep(2)
     finally:
         app.stop()
 
+    assert app.stderr == ''
     assert app.stdout.count('myapp started') == 2
