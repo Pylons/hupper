@@ -1,3 +1,11 @@
+0.3.1 (2016-11-06)
+==================
+
+- Fix package long description on PyPI.
+
+- Ensure that the stdin file handle is inheritable incase the "spawn" variant
+  of multiprocessing is enabled.
+
 0.3 (2016-11-06)
 ================
 

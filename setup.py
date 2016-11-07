@@ -25,7 +25,7 @@ tests_require = [
 
 setup(
     name='hupper',
-    version='0.3',
+    version='0.3.1',
     description='Integrated process monitor for developing servers.',
     long_description=readme + '\n\n' + changes,
     author='Michael Merickel',
@@ -39,7 +39,7 @@ setup(
     },
     test_suite='tests',
     zip_safe=False,
-    keywords='server reloader hup file watch process',
+    keywords='server daemon autoreload reloader hup file watch process',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
