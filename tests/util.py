@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -17,12 +18,31 @@ class TestApp(threading.Thread):
         self.args = args
         self.exitcode = None
         self.process = None
+        self.tmpsize = 0
+        self.response = None
+
+    def __enter__(self):
+        fd, self.tmpfile = tempfile.mkstemp()
+        os.close(fd)
+        touch(self.tmpfile)
+        self.tmpsize = os.path.getsize(self.tmpfile)
+        self.response = readfile(self.tmpfile)
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
+        if self.tmpfile:
+            os.unlink(self.tmpfile)
+            self.tmpfile = None
 
     def run(self):
         cmd = [
             sys.executable,
             os.path.join(here, self.name),
-        ] + self.args
+        ] + self.args + [
+            self.tmpfile,
+        ]
 
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
@@ -48,6 +68,15 @@ class TestApp(threading.Thread):
         if self.is_alive():
             self.process.terminate()
         self.join()
+
+    def wait_for_response(self, timeout=5, interval=0.1):
+        self.tmpsize = wait_for_change(
+            self.tmpfile,
+            last_size=self.tmpsize,
+            timeout=timeout,
+            interval=interval,
+        )
+        self.response = readfile(self.tmpfile)
 
 
 def touch(fname, times=None):
