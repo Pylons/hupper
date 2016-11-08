@@ -15,9 +15,10 @@ class TestApp(threading.Thread):
     def __init__(self, name, args):
         super(TestApp, self).__init__()
         self.name = name
-        self.args = args
+        self.args = args or []
         self.exitcode = None
         self.process = None
+        self.tmpfile = None
         self.tmpsize = 0
         self.response = None
 
@@ -40,9 +41,10 @@ class TestApp(threading.Thread):
         cmd = [
             sys.executable,
             os.path.join(here, self.name),
-        ] + self.args + [
-            self.tmpfile,
         ]
+        if self.tmpfile:
+            cmd += ['--callback-file', self.tmpfile]
+        cmd += self.args
 
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
