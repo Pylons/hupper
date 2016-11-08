@@ -98,7 +98,7 @@ def wait_for_change(path, last_size=0, timeout=5, interval=0.1):
     size = os.path.getsize(path)
     while size == last_size:
         duration = time.time() - start
-        if timeout is not None and duration >= timeout:
+        if timeout is not None and duration >= timeout:  # pragma: nocover
             raise RuntimeError(
                 'timeout waiting for change to file=%s' % (path,))
         time.sleep(min(

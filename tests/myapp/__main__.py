@@ -38,7 +38,7 @@ def main():
         if args.reload_interval:
             kw['reload_interval'] = args.reload_interval
 
-        reloader = hupper.start_reloader('tests.myapp.__main__.main', **kw)
+        reloader = hupper.start_reloader(__name__ + '.main', **kw)
 
     if hupper.is_active():
         reloader.watch_files([os.path.join(here, 'foo.ini')])

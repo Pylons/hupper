@@ -16,7 +16,7 @@ def test_myapp_reloads_when_touching_ini():
 def test_myapp_reloads_when_touching_pyfile():
     with util.TestApp('myapp', ['--reload']) as app:
         app.wait_for_response(interval=1)
-        util.touch('myapp/__init__.py')
+        util.touch('myapp/__main__.py')
         app.wait_for_response()
         app.stop()
 
