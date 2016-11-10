@@ -21,6 +21,7 @@ class TestApp(threading.Thread):
         self.tmpfile = None
         self.tmpsize = 0
         self.response = None
+        self.stdout, self.stderr = b'', b''
 
     def __enter__(self):
         fd, self.tmpfile = tempfile.mkstemp()
@@ -38,16 +39,14 @@ class TestApp(threading.Thread):
             self.tmpfile = None
 
     def run(self):
-        cmd = [
-            sys.executable,
-            os.path.join(here, self.name),
-        ]
+        cmd = [sys.executable, '-m', self.name]
         if self.tmpfile:
             cmd += ['--callback-file', self.tmpfile]
         cmd += self.args
 
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
+        env['PYTHONPATH'] = here + ':' + env.get('PYTHONPATH', '')
 
         self.process = subprocess.Popen(
             cmd,
