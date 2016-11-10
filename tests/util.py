@@ -39,14 +39,13 @@ class TestApp(threading.Thread):
             self.tmpfile = None
 
     def run(self):
-        cmd = [sys.executable, '-m', self.name]
+        cmd = [sys.executable, '-m', 'tests.' + self.name]
         if self.tmpfile:
             cmd += ['--callback-file', self.tmpfile]
         cmd += self.args
 
         env = os.environ.copy()
         env['PYTHONUNBUFFERED'] = '1'
-        env['PYTHONPATH'] = here + ':' + env.get('PYTHONPATH', '')
 
         self.process = subprocess.Popen(
             cmd,
