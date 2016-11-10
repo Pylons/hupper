@@ -213,6 +213,12 @@ def worker_main(spec, files_queue, pipe, parent_pipe):
     # issues in which files are reloaded twice
     sys.dont_write_bytecode = True
 
+    global _reloader_proxy
+    _reloader_proxy = ReloaderProxy(files_queue, pipe)
+
+    parent_watcher = WatchForParentShutdown(pipe)
+    parent_watcher.start()
+
     # import the worker path before polling sys.modules
     modname, funcname = spec.rsplit('.', 1)
     module = importlib.import_module(modname)
@@ -220,12 +226,6 @@ def worker_main(spec, files_queue, pipe, parent_pipe):
 
     poller = WatchSysModules(files_queue.put)
     poller.start()
-
-    parent_watcher = WatchForParentShutdown(pipe)
-    parent_watcher.start()
-
-    global _reloader_proxy
-    _reloader_proxy = ReloaderProxy(files_queue, pipe)
 
     # start the worker
     func()
