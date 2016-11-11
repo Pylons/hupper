@@ -40,7 +40,6 @@ setup(
         'docs': docs_require,
         'testing': tests_require,
     },
-    test_suite='tests',
     zip_safe=False,
     keywords='server daemon autoreload reloader hup file watch process',
     classifiers=[
