@@ -1,5 +1,8 @@
 [run]
-source = hupper, tests
+parallel = true
+source =
+    hupper
+    tests
 
 [paths]
 source =
