@@ -1,14 +1,15 @@
 from setuptools import setup, find_packages
-import os
 
-here = os.path.abspath(os.path.dirname(__file__))
-try:
-    with open(os.path.join(here, 'README.rst')) as f:
-        readme = f.read()
-    with open(os.path.join(here, 'CHANGES.rst')) as f:
-        changes = f.read()
-except IOError:
-    readme = changes = ''
+def readfile(name):
+    with open(name) as f:
+        return f.read()
+
+readme = readfile('README.rst')
+changes = readfile('CHANGES.rst')
+
+setup_requires = [
+    'setuptools-git',
+]
 
 docs_require = [
     'watchdog',
@@ -31,8 +32,10 @@ setup(
     author='Michael Merickel',
     author_email='michael@merickel.org',
     url='https://github.com/Pylons/hupper',
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages('src', exclude=['tests']),
+    package_dir={'': 'src'},
     include_package_data=True,
+    setup_requires=setup_requires,
     extras_require={
         'docs': docs_require,
         'testing': tests_require,

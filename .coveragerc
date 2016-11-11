@@ -1,2 +1,8 @@
 [run]
 source = hupper, tests
+
+[paths]
+source =
+    src/hupper
+    .tox/*/lib/python*/site-packages/hupper
+    .tox/pypy*/site-packages/hupper
