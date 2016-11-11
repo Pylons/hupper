@@ -60,6 +60,9 @@ class FileMonitorProxy(object):
         self.change_event.clear()
         self.changed_paths.clear()
 
+    def set_changed(self):
+        self.change_event.set()
+
 
 class Reloader(object):
     """
@@ -192,9 +195,8 @@ class Reloader(object):
             signal.signal(signal.SIGHUP, self._signal_sighup)
 
     def _signal_sighup(self, signum, frame):
-        if self.worker:
-            self.out('Received SIGHUP, triggering a reload.')
-            self.worker.terminate()
+        self.out('Received SIGHUP, triggering a reload.')
+        self.monitor.set_changed()
 
     def _restore_signals(self):
         if hasattr(signal, 'SIGHUP'):
