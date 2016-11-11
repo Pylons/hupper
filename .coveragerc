@@ -1,2 +1,10 @@
 [run]
-source = hupper, tests
+branch = true
+source =
+    hupper
+    tests
+parallel = true
+
+[report]
+show_missing = true
+precision = 2
