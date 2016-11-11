@@ -1,3 +1,13 @@
+unreleased
+==========
+
+- Support triggering reloads via SIGHUP when hupper detected a crash and is
+  waiting for a file to change.
+
+- Setup the reloader proxy prior to importing the worker's module. This
+  should allow some work to be done at module-scope instead of in the
+  callable.
+
 0.3.1 (2016-11-06)
 ==================
 
