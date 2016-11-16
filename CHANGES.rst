@@ -1,5 +1,5 @@
-unreleased
-==========
+0.3.2 (2016-11-15)
+==================
 
 - Support triggering reloads via SIGHUP when hupper detected a crash and is
   waiting for a file to change.
