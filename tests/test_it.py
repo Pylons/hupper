@@ -1,10 +1,14 @@
+import os.path
+import time
+
 from . import util
 
+here = os.path.abspath(os.path.dirname(__file__))
 
 def test_myapp_reloads_when_touching_ini():
     with util.TestApp('myapp', ['--reload']) as app:
         app.wait_for_response(interval=1)
-        util.touch('myapp/foo.ini')
+        util.touch(os.path.join(here, 'myapp/foo.ini'))
         app.wait_for_response()
         app.stop()
 
@@ -16,7 +20,7 @@ def test_myapp_reloads_when_touching_ini():
 def test_myapp_reloads_when_touching_pyfile():
     with util.TestApp('myapp', ['--reload']) as app:
         app.wait_for_response(interval=1)
-        util.touch('myapp/__main__.py')
+        util.touch(os.path.join(here, 'myapp/cli.py'))
         app.wait_for_response()
         app.stop()
 

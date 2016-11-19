@@ -5,7 +5,7 @@ import tempfile
 import threading
 import time
 
-here = os.path.dirname(__file__)
+here = os.path.abspath(os.path.dirname(__file__))
 
 
 class TestApp(threading.Thread):
@@ -79,8 +79,6 @@ class TestApp(threading.Thread):
 
 
 def touch(fname, times=None):
-    if not os.path.isabs(fname):
-        fname = os.path.join(here, fname)
     with open(fname, 'a'):
         os.utime(fname, times)
 
