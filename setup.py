@@ -7,10 +7,6 @@ def readfile(name):
 readme = readfile('README.rst')
 changes = readfile('CHANGES.rst')
 
-setup_requires = [
-    'setuptools-git',
-]
-
 docs_require = [
     'watchdog',
     'Sphinx',
@@ -26,7 +22,7 @@ tests_require = [
 
 setup(
     name='hupper',
-    version='0.3.2',
+    version='0.3.3',
     description='Integrated process monitor for developing servers.',
     long_description=readme + '\n\n' + changes,
     author='Michael Merickel',
@@ -35,7 +31,6 @@ setup(
     packages=find_packages('src', exclude=['tests']),
     package_dir={'': 'src'},
     include_package_data=True,
-    setup_requires=setup_requires,
     extras_require={
         'docs': docs_require,
         'testing': tests_require,
