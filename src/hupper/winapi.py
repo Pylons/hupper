@@ -6,7 +6,7 @@ kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 if ctypes.sizeof(ctypes.c_void_p) == 8:
     ULONG_PTR = ctypes.c_int64
 else:
-    ULONG_PTR = ctypes.u_long
+    ULONG_PTR = ctypes.c_ulong
 DWORD = wintypes.DWORD
 LARGE_INTEGER = ctypes.c_int64
 SIZE_T = ULONG_PTR
