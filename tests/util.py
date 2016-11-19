@@ -53,7 +53,6 @@ class TestApp(threading.Thread):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=env,
-            close_fds=True,
             universal_newlines=True,
         )
         try:
