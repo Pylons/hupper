@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import subprocess
 import sys
@@ -12,7 +13,7 @@ class TestApp(threading.Thread):
     stdin = None
     daemon = True
 
-    def __init__(self, name, args):
+    def __init__(self, name, args, expected_code=1):
         super(TestApp, self).__init__()
         self.name = name
         self.args = args or []
@@ -21,6 +22,7 @@ class TestApp(threading.Thread):
         self.tmpfile = None
         self.tmpsize = 0
         self.response = None
+        self.expected_code = expected_code
         self.stdout, self.stderr = b'', b''
 
     def __enter__(self):
@@ -67,6 +69,14 @@ class TestApp(threading.Thread):
         if self.is_alive():
             self.process.terminate()
         self.join()
+        if self.exitcode != self.expected_code:
+            self.out('subprocess failed with code=%s' % self.exitcode)
+            self.out('-- stdout --\n%s' % self.stdout)
+            self.out('-- stderr --\n%s' % self.stderr)
+            raise RuntimeError('subprocess quit with unexpected error code')
+
+    def out(self, msg):
+        print(msg, file=sys.stderr)
 
     def wait_for_response(self, timeout=5, interval=0.1):
         self.tmpsize = wait_for_change(
