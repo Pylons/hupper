@@ -1,0 +1,14 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python35"
+      TOXENV: "py35"
+    - PYTHON: "C:\\Python27"
+      TOXENV: "py27"
+
+install:
+  - "%PYTHON%\\python.exe -m pip install tox"
+
+build: off
+
+test_script:
+  - "%PYTHON%\\Scripts\\tox.exe"
