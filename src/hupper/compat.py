@@ -1,14 +1,10 @@
 # flake8: noqa
 import imp
 import importlib
-import platform
 import sys
 
 PY2 = sys.version_info[0] == 2
 WIN = sys.platform == 'win32'
-
-OS64 = platform.machine().endswith('64')
-PY64 = sys.maxsize > 2**32
 
 if PY2:
     long = long
