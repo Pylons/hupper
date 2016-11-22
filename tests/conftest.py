@@ -6,7 +6,7 @@ from . import util
 
 
 def err(msg):
-	print(msg, file=sys.stderr)
+    print(msg, file=sys.stderr)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -29,8 +29,8 @@ def TestAppFactory(request):
         return app
     yield factory
     if request.node.rep_call.failed and apps:
-    	for app in apps:
+        for app in apps:
             err('-- test app failed --\nname=%s\nargs=%s\ncode=%s' % (
-            	app.name, app.args, app.exitcode))
+                app.name, app.args, app.exitcode))
             err('-- stdout --\n%s' % app.stdout)
             err('-- stderr --\n%s' % app.stderr)
