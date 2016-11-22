@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from glob import glob
 import signal
 import sys
 import threading
@@ -35,7 +36,11 @@ class FileMonitorProxy(object):
             print(msg)
 
     def add_path(self, path):
-        self.monitor.add_path(path)
+        # if the glob does not match any files then go ahead and pass
+        # the pattern to the monitor anyway incase it is just a file that
+        # is currently missing
+        for p in glob(path) or [path]:
+            self.monitor.add_path(p)
 
     def start(self):
         self.monitor.start()
@@ -48,7 +53,7 @@ class FileMonitorProxy(object):
         if path not in self.changed_paths:
             self.changed_paths.add(path)
             self.out('%s changed; reloading ...' % (path,))
-        self.change_event.set()
+        self.set_changed()
 
     def is_changed(self):
         return self.change_event.is_set()
