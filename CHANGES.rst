@@ -1,3 +1,10 @@
+0.3.4 (2016-11-21)
+==================
+
+- Add support for globbing using the stdlib ``glob`` module. On Python 3.5+
+  this allows recursive globs using ``**``. Prior to this, the globbing is
+  more limited.
+
 0.3.3 (2016-11-19)
 ==================
 
