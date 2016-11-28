@@ -3,7 +3,7 @@ import os
 from .compat import WIN
 
 
-if WIN:  # pragma: nocover
+if WIN:  # pragma: no cover
     import msvcrt
     from . import winapi
 

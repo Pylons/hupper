@@ -3,6 +3,8 @@ parallel = true
 source =
     hupper
     tests
+omit =
+    hupper/winapi.py
 
 [paths]
 source =

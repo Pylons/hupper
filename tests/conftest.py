@@ -5,7 +5,7 @@ import sys
 from . import util
 
 
-def err(msg):
+def err(msg):  # pragma: no cover
     print(msg, file=sys.stderr)
 
 
@@ -28,7 +28,7 @@ def TestAppFactory(request):
         apps.append(app)
         return app
     yield factory
-    if request.node.rep_call.failed and apps:
+    if request.node.rep_call.failed and apps:  # pragma: no cover
         for app in apps:
             err('-- test app failed --\nname=%s\nargs=%s\ncode=%s' % (
                 app.name, app.args, app.exitcode))
