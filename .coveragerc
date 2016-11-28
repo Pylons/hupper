@@ -7,5 +7,8 @@ source =
 [paths]
 source =
     src/hupper
-    .tox/*/lib/python*/site-packages/hupper
-    .tox/pypy*/site-packages/hupper
+    */site-packages/hupper
+
+[report]
+show_missing = true
+precision = 2
