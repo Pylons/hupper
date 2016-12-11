@@ -40,11 +40,11 @@ def main(args=None):
         if opts.reload_interval:
             kw['reload_interval'] = opts.reload_interval
 
-        reloader = hupper.start_reloader(__name__ + '.main', **kw)
+        hupper.start_reloader(__name__ + '.main', **kw)
 
     if hupper.is_active():
-        reloader.watch_files([os.path.join(here, 'foo.ini')])
-        reloader.watch_files(opts.watch_files)
+        hupper.get_reloader().watch_files([os.path.join(here, 'foo.ini')])
+        hupper.get_reloader().watch_files(opts.watch_files)
 
     if opts.callback_file:
         with open(opts.callback_file, 'ab') as fp:

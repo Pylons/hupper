@@ -104,9 +104,11 @@ class WatchForParentShutdown(threading.Thread):
 
 class Worker(object):
     """ A helper object for managing a worker process lifecycle. """
-    def __init__(self, worker_path):
+    def __init__(self, worker_path, worker_args=None, worker_kwargs=None):
         super(Worker, self).__init__()
         self.worker_path = worker_path
+        self.worker_args = worker_args
+        self.worker_kwargs = worker_kwargs
         self.files_queue = multiprocessing.Queue()
         self.pipe, self._c2p = multiprocessing.Pipe()
         self.terminated = False
@@ -128,6 +130,8 @@ class Worker(object):
 
         kw = dict(
             spec=self.worker_path,
+            spec_args=self.worker_args,
+            spec_kwargs=self.worker_kwargs,
             files_queue=self.files_queue,
             pipe=self._c2p,
             parent_pipe=self.pipe,
@@ -216,7 +220,13 @@ class ReloaderProxy(IReloaderProxy):
         self.pipe.send_bytes(b'1')
 
 
-def worker_main(spec, files_queue, pipe, parent_pipe):
+def worker_main(spec, files_queue, pipe, parent_pipe, spec_args=None,
+                spec_kwargs=None):
+    if spec_args is None:
+        spec_args = []
+    if spec_kwargs is None:
+        spec_kwargs = {}
+
     # close the parent end of the pipe, we aren't using it in the worker
     parent_pipe.close()
     del parent_pipe
@@ -244,7 +254,7 @@ def worker_main(spec, files_queue, pipe, parent_pipe):
 
     # start the worker
     try:
-        func()
+        func(*spec_args, **spec_kwargs)
     except:
         try:
             # attempt to send imported paths to the master prior to crashing
