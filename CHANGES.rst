@@ -1,3 +1,10 @@
+0.3.5 (2016-12-17)
+==================
+
+- Attempt to send imported paths to the monitor process before crashing to
+  avoid cases where the master is waiting for changes in files that it never
+  started monitoring.
+
 0.3.4 (2016-11-21)
 ==================
 
