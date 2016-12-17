@@ -25,6 +25,7 @@ class WatchSysModules(threading.Thread):
         super(WatchSysModules, self).__init__()
         self.paths = set()
         self.callback = callback
+        self.lock = threading.Lock()
 
     def run(self):
         while True:
@@ -33,10 +34,11 @@ class WatchSysModules(threading.Thread):
 
     def update_paths(self):
         """Check sys.modules for paths to add to our path set."""
-        for path in iter_source_paths(iter_module_paths()):
-            if path not in self.paths:
-                self.paths.add(path)
-                self.callback(path)
+        with self.lock:
+            for path in iter_source_paths(iter_module_paths()):
+                if path not in self.paths:
+                    self.paths.add(path)
+                    self.callback(path)
 
 
 def iter_source_paths(paths):
