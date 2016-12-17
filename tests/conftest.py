@@ -21,16 +21,17 @@ def pytest_runtest_makereport(item, call):
 
 
 @pytest.yield_fixture
-def TestAppFactory(request):
-    apps = []
-    def factory(*args, **kwargs):
-        app = util.TestApp(*args, **kwargs)
-        apps.append(app)
-        return app
-    yield factory
-    if request.node.rep_call.failed and apps:  # pragma: no cover
-        for app in apps:
-            err('-- test app failed --\nname=%s\nargs=%s\ncode=%s' % (
-                app.name, app.args, app.exitcode))
-            err('-- stdout --\n%s' % app.stdout)
-            err('-- stderr --\n%s' % app.stderr)
+def testapp(request):
+    app = util.TestApp()
+    try:
+        yield app
+    finally:
+        app.stop()
+    if (
+        request.node.rep_call.failed
+        and app.exitcode is not None
+    ):  # pragma: no cover
+        err('-- test app failed --\nname=%s\nargs=%s\ncode=%s' % (
+            app.name, app.args, app.exitcode))
+        err('-- stdout --\n%s' % app.stdout)
+        err('-- stderr --\n%s' % app.stderr)
