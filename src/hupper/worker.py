@@ -219,16 +219,21 @@ def worker_main(spec, files_queue, pipe, parent_pipe):
     parent_watcher = WatchForParentShutdown(pipe)
     parent_watcher.start()
 
+    poller = WatchSysModules(files_queue.put)
+    poller.start()
+
     # import the worker path before polling sys.modules
     modname, funcname = spec.rsplit('.', 1)
     module = importlib.import_module(modname)
     func = getattr(module, funcname)
 
-    poller = WatchSysModules(files_queue.put)
-    # update paths immediately after importing foreign code to ensure the
-    # master starts tracking the imported files for changes
-    poller.update_paths()
-    poller.start()
-
     # start the worker
-    func()
+    try:
+        func()
+    except:
+        try:
+            # attempt to send imported paths to the master prior to crashing
+            poller.update_paths()
+        except:  # pragma: no cover
+            pass
+        raise
