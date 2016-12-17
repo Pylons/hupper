@@ -172,9 +172,9 @@ class Reloader(object):
 
         self.monitor.clear_changes()
 
-        force_exit = self.worker.terminated
+        force_restart = self.worker.terminated
         self.worker = None
-        return force_exit
+        return force_restart
 
     def _wait_for_changes(self):
         self.out('Waiting for changes before reloading.')

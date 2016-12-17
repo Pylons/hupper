@@ -225,6 +225,9 @@ def worker_main(spec, files_queue, pipe, parent_pipe):
     func = getattr(module, funcname)
 
     poller = WatchSysModules(files_queue.put)
+    # update paths immediately after importing foreign code to ensure the
+    # master starts tracking the imported files for changes
+    poller.update_paths()
     poller.start()
 
     # start the worker
