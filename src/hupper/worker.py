@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 
 from .compat import (
     interrupt_main,
@@ -40,6 +41,14 @@ class WatchSysModules(threading.Thread):
         """Check sys.modules for paths to add to our path set."""
         with self.lock:
             for path in iter_source_paths(iter_module_paths()):
+                if path not in self.paths:
+                    self.paths.add(path)
+                    self.callback(path)
+
+    def search_traceback(self, tb):
+        with self.lock:
+            for filename, line, funcname, txt in traceback.extract_tb(tb):
+                path = os.path.abspath(filename)
                 if path not in self.paths:
                     self.paths.add(path)
                     self.callback(path)
@@ -240,6 +249,7 @@ def worker_main(spec, files_queue, pipe, parent_pipe):
         try:
             # attempt to send imported paths to the master prior to crashing
             poller.update_paths()
+            poller.search_traceback(sys.exc_info()[2])
             poller.stop()
             poller.join()
         except:  # pragma: no cover
