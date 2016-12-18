@@ -1,3 +1,10 @@
+0.3.6 (2016-12-18)
+==================
+
+- Read the traceback for unknown files prior to crashing. If an import
+  crashes due to a module-scope exception the file that caused the crash would
+  not be tracked but this should help.
+
 0.3.5 (2016-12-17)
 ==================
 
