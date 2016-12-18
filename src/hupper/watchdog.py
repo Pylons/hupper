@@ -26,7 +26,9 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
 
     def add_path(self, path):
         with self.lock:
-            if path not in self.paths:
+            # avoid tracking the path if it does not exist
+            # ideally we would track the path anyway incase it is added
+            if os.path.exists(path) and path not in self.paths:
                 self.paths.add(path)
                 dirpath = os.path.dirname(path)
                 if dirpath not in self.dirpaths:

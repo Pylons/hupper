@@ -26,11 +26,15 @@ class WatchSysModules(threading.Thread):
         self.paths = set()
         self.callback = callback
         self.lock = threading.Lock()
+        self.stopped = False
 
     def run(self):
-        while True:
+        while not self.stopped:
             self.update_paths()
             time.sleep(self.poll_interval)
+
+    def stop(self):
+        self.stopped = True
 
     def update_paths(self):
         """Check sys.modules for paths to add to our path set."""
@@ -236,6 +240,8 @@ def worker_main(spec, files_queue, pipe, parent_pipe):
         try:
             # attempt to send imported paths to the master prior to crashing
             poller.update_paths()
+            poller.stop()
+            poller.join()
         except:  # pragma: no cover
             pass
         raise
