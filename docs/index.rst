@@ -57,8 +57,19 @@ used to more efficiently watch for changes to files.
 This is an optional dependency and if it's not installed, then ``hupper`` will
 fallback to less efficient polling of the filesystem.
 
-Usage
-=====
+Command-line Usage
+==================
+
+Hupper can load any Python code similar to ``python -m <module>`` by using the
+``hupper -m <module>`` program.
+
+.. code-block:: shell
+
+   $ hupper -m myapp
+   Starting monitor for PID 23982.
+
+API Usage
+=========
 
 The reloading mechanism is implemented by forking worker processes from a
 parent monitor. Start by defining an entry point for your process. This must
