@@ -16,8 +16,19 @@ hupper
 any imported Python files in ``sys.modules`` as well as custom paths. When
 files are changed the process is restarted.
 
-Usage
-=====
+Command-line Usage
+==================
+
+Hupper can load any Python code similar to ``python -m <module>`` by using the
+``hupper -m <module>`` program.
+
+.. code-block:: shell
+
+   $ hupper -m myapp
+   Starting monitor for PID 23982.
+
+API Usage
+=========
 
 Start by defining an entry point for your process. This must be an importable
 path in string format. For example, ``myapp.scripts.serve.main``.
