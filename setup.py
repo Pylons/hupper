@@ -35,6 +35,7 @@ setup(
         'docs': docs_require,
         'testing': tests_require,
     },
+    entry_points={"console_scripts": ["hupper = hupper.cli:main"]},
     zip_safe=False,
     keywords='server daemon autoreload reloader hup file watch process',
     classifiers=[

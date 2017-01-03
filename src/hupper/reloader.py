@@ -80,8 +80,12 @@ class Reloader(object):
                  monitor_factory,
                  reload_interval=1,
                  verbose=1,
+                 worker_args=None,
+                 worker_kwargs=None,
                  ):
         self.worker_path = worker_path
+        self.worker_args = worker_args
+        self.worker_kwargs = worker_kwargs
         self.monitor_factory = monitor_factory
         self.reload_interval = reload_interval
         self.verbose = verbose
@@ -132,7 +136,9 @@ class Reloader(object):
             self._restore_signals()
 
     def _run_worker(self):
-        self.worker = Worker(self.worker_path)
+        self.worker = Worker(self.worker_path,
+                             worker_args=self.worker_args,
+                             worker_kwargs=self.worker_kwargs)
         self.worker.start()
 
         try:
@@ -213,6 +219,8 @@ def start_reloader(
     reload_interval=1,
     verbose=1,
     monitor_factory=None,
+    worker_args=None,
+    worker_kwargs=None,
 ):
     """
     Start a monitor and then fork a worker process which starts by executing
@@ -266,6 +274,8 @@ def start_reloader(
 
     reloader = Reloader(
         worker_path=worker_path,
+        worker_args=worker_args,
+        worker_kwargs=worker_kwargs,
         reload_interval=reload_interval,
         verbose=verbose,
         monitor_factory=monitor_factory,
