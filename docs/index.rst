@@ -63,7 +63,7 @@ Command-line Usage
 Hupper can load any Python code similar to ``python -m <module>`` by using the
 ``hupper -m <module>`` program.
 
-.. code-block:: shell
+.. code-block:: console
 
    $ hupper -m myapp
    Starting monitor for PID 23982.
