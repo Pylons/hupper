@@ -26,14 +26,19 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
 
     def add_path(self, path):
         with self.lock:
-            # avoid tracking the path if it does not exist
-            # ideally we would track the path anyway incase it is added
-            if os.path.exists(path) and path not in self.paths:
-                self.paths.add(path)
-                dirpath = os.path.dirname(path)
-                if dirpath not in self.dirpaths:
-                    self.dirpaths.add(dirpath)
+            dirpath = os.path.dirname(path)
+            if dirpath not in self.dirpaths:
+                try:
                     self.schedule(self, dirpath)
+                except (OSError, IOError):  # pragma: no cover
+                    # ideally we would handle this better but if the
+                    # directory is missing watchdog raises an error
+                    pass
+                else:
+                    self.dirpaths.add(dirpath)
+
+            if path not in self.paths:
+                self.paths.add(path)
 
     def on_any_event(self, event):
         with self.lock:

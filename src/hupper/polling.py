@@ -57,6 +57,6 @@ def get_mtime(path):
         stat = os.stat(path)
         if stat:
             return stat.st_mtime
-    except (OSError, IOError):
+    except (OSError, IOError):  # pragma: no cover
         pass
     return 0
