@@ -23,22 +23,19 @@ except ImportError:
 
 
 try:
-    import importlib.util as imputil
+    from importlib.util import (
+        cache_from_source as get_pyc_path,
+        source_from_cache as get_py_path)
 except ImportError:
-    imputil = None
 
-if imputil:
-    get_pyc_path = imputil.cache_from_source
-    get_py_path = imputil.source_from_cache
-
-elif PY2:
-    get_pyc_path = lambda path: path + 'c'
-    get_py_path = lambda path: path[:-1]
+    if PY2:
+        get_pyc_path = lambda path: path + 'c'
+        get_py_path = lambda path: path[:-1]
 
 # fallback on python < 3.5
-else:
-    get_pyc_path = imp.cache_from_source
-    get_py_path = imp.source_from_cache
+    else:
+        get_pyc_path = imp.cache_from_source
+        get_py_path = imp.source_from_cache
 
 
 def is_watchdog_supported():
