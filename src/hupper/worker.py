@@ -104,11 +104,11 @@ class WatchForParentShutdown(threading.Thread):
 
 class Worker(object):
     """ A helper object for managing a worker process lifecycle. """
-    def __init__(self, worker_path, worker_args=None, worker_kwargs=None):
+    def __init__(self, spec, args=None, kwargs=None):
         super(Worker, self).__init__()
-        self.worker_path = worker_path
-        self.worker_args = worker_args
-        self.worker_kwargs = worker_kwargs
+        self.worker_spec = spec
+        self.worker_args = args
+        self.worker_kwargs = kwargs
         self.files_queue = multiprocessing.Queue()
         self.pipe, self._c2p = multiprocessing.Pipe()
         self.terminated = False
@@ -129,7 +129,7 @@ class Worker(object):
             os.set_inheritable(self.stdin_fd, True)
 
         kw = dict(
-            spec=self.worker_path,
+            spec=self.worker_spec,
             spec_args=self.worker_args,
             spec_kwargs=self.worker_kwargs,
             files_queue=self.files_queue,
@@ -200,11 +200,7 @@ def is_active():
     Return ``True`` if the current process being monitored by a parent process.
 
     """
-    try:
-        get_reloader()
-    except RuntimeError:
-        return False
-    return True
+    return _reloader_proxy is not None
 
 
 class ReloaderProxy(IReloaderProxy):

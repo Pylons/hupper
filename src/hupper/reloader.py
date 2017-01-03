@@ -136,9 +136,11 @@ class Reloader(object):
             self._restore_signals()
 
     def _run_worker(self):
-        self.worker = Worker(self.worker_path,
-                             worker_args=self.worker_args,
-                             worker_kwargs=self.worker_kwargs)
+        self.worker = Worker(
+            self.worker_path,
+            args=self.worker_args,
+            kwargs=self.worker_kwargs,
+        )
         self.worker.start()
 
         try:

@@ -25,14 +25,14 @@ except ImportError:
 try:
     from importlib.util import (
         cache_from_source as get_pyc_path,
-        source_from_cache as get_py_path)
+        source_from_cache as get_py_path,
+    )
 except ImportError:
-
     if PY2:
         get_pyc_path = lambda path: path + 'c'
         get_py_path = lambda path: path[:-1]
 
-# fallback on python < 3.5
+    # fallback on python < 3.5
     else:
         get_pyc_path = imp.cache_from_source
         get_py_path = imp.source_from_cache
