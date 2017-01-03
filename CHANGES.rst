@@ -1,5 +1,5 @@
-unreleased
-==========
+0.4.0 (2017-01-02)
+==================
 
 - Support running any Python module via ``hupper -m <module>``. This is
   equivalent to ``python -m`` except will fully reload the process when files
