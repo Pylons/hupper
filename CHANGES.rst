@@ -1,3 +1,9 @@
+0.4.1 (2017-01-03)
+==================
+
+- Handle errors that may occur when using watchdog to observe non-existent
+  folders.
+
 0.4.0 (2017-01-02)
 ==================
 
