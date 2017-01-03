@@ -1,3 +1,10 @@
+unreleased
+==========
+
+- Support running any Python module via ``hupper -m <module>``. This is
+  equivalent to ``python -m`` except will fully reload the process when files
+  change. See https://github.com/Pylons/hupper/pull/8
+
 0.3.6 (2016-12-18)
 ==================
 
