@@ -80,7 +80,6 @@ be an importable path in string format. For example,
 
     # myapp/scripts/serve.py
 
-    import os
     import sys
     import hupper
     import waitress
