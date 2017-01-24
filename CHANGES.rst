@@ -1,3 +1,10 @@
+0.4.2 (2017-01-24)
+==================
+
+- Pause briefly after receiving a SIGINT to allow the worker to kill itself.
+  If it does not die then it is terminated.
+  See https://github.com/Pylons/hupper/issues/11
+
 0.4.1 (2017-01-03)
 ==================
 
