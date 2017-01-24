@@ -167,6 +167,11 @@ class Reloader(object):
                     pass
                 else:
                     self.monitor.add_path(path)
+        except KeyboardInterrupt:
+            if self.worker.is_alive():
+                self.out('Waiting for server to exit ...')
+                time.sleep(self.reload_interval)
+            raise
         finally:
             if self.worker.is_alive():
                 self.out('Killing server with PID %s.' % self.worker.pid)
