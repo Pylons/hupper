@@ -5,6 +5,8 @@
   If it does not die then it is terminated.
   See https://github.com/Pylons/hupper/issues/11
 
+- Python 3.6 compatibility.
+
 0.4.1 (2017-01-03)
 ==================
 
