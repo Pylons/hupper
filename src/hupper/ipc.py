@@ -25,7 +25,15 @@ if WIN:  # pragma: no cover
 
         def add_child(self, pid):
             hp = winapi.OpenProcess(winapi.PROCESS_ALL_ACCESS, False, pid)
-            return winapi.AssignProcessToJobObject(self.h_job, hp)
+            try:
+                return winapi.AssignProcessToJobObject(self.h_job, hp)
+            except OSError as ex:
+                if getattr(ex, 'winerror') == 5:
+                    # skip ACCESS_DENIED_ERROR on windows < 8 which occurs when
+                    # the process is already attached to another job
+                    pass
+                else:
+                    raise
 
     def send_fd(pipe, fd, pid):
         hf = msvcrt.get_osfhandle(fd)
