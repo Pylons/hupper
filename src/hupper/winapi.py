@@ -7,8 +7,10 @@ if ctypes.sizeof(ctypes.c_void_p) == 8:
     ULONG_PTR = ctypes.c_int64
 else:
     ULONG_PTR = ctypes.c_ulong
+BOOL = wintypes.BOOL
 DWORD = wintypes.DWORD
-LARGE_INTEGER = ctypes.c_int64
+HANDLE = wintypes.HANDLE
+LARGE_INTEGER = wintypes.LARGE_INTEGER
 SIZE_T = ULONG_PTR
 ULONGLONG = ctypes.c_uint64
 
@@ -82,7 +84,7 @@ class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
     ]
 
 
-class Handle(wintypes.HANDLE):
+class Handle(HANDLE):
     closed = False
 
     def Close(self):
@@ -119,7 +121,9 @@ def DuplicateHandle(
     targetHandle = wintypes.HANDLE()
     ret = kernel32.DuplicateHandle(
         hSourceProcess, hSourceHandle, hTargetProcess,
-        ctypes.byref(targetHandle), desiredAccess, inheritHandle, options)
+        ctypes.byref(targetHandle),
+        desiredAccess, inheritHandle, options,
+    )
     CheckError(ret, 'failed to duplicate handle')
     return Handle(targetHandle.value)
 
