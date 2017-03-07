@@ -24,7 +24,7 @@ if WIN:  # pragma: no cover
             )
 
         def add_child(self, pid):
-            hp = winapi.OpenProcess(winapi.PROCESS_ALL_ACCESS, False, pid)
+            hp = winapi.OpenProcess(winapi.PROCESS_ALL_ACCESS, 0, pid)
             try:
                 return winapi.AssignProcessToJobObject(self.h_job, hp)
             except OSError as ex:
@@ -36,13 +36,19 @@ if WIN:  # pragma: no cover
                     raise
 
     def send_fd(pipe, fd, pid):
-        hf = msvcrt.get_osfhandle(fd)
-        hp = winapi.OpenProcess(winapi.PROCESS_ALL_ACCESS, False, pid)
-        tp = winapi.DuplicateHandle(
-            winapi.GetCurrentProcess(), hf, hp,
-            0, False, winapi.DUPLICATE_SAME_ACCESS,
-        ).Detach()  # do not close the handle
-        pipe.send(tp)
+        # we are expecting the fd to be inheritable as well as the handle
+        # otherwise we would need to dup the handle
+        th = msvcrt.get_osfhandle(fd)
+        if (
+            hasattr(os, 'get_handle_inheritable') and
+            not os.get_handle_inheritable(th)
+        ):
+            hp = winapi.OpenProcess(winapi.PROCESS_ALL_ACCESS, 0, pid)
+            th = winapi.DuplicateHandle(
+                winapi.GetCurrentProcess(), th, hp,
+                0, 0, winapi.DUPLICATE_SAME_ACCESS,
+            ).Detach()  # do not close the handle
+        pipe.send(th)
 
     def recv_fd(pipe, mode):
         handle = pipe.recv()
@@ -68,3 +74,17 @@ else:
     def recv_fd(pipe, mode):
         fd = pipe.recv()
         return os.fdopen(fd, mode)
+
+
+def dup_fd(src_fd):
+    fd = os.dup(src_fd)
+
+    # we want to return an inheritable fd
+    # in py3 the default is set to not inheritable, but before that
+    # it was always inheritable so we only bother to use the py3 api here
+    # to switch the flag if necessary (in hupper we are usually duping stdin
+    # which is inheritable by default)
+    if hasattr(os, 'get_inheritable') and not os.get_inheritable(fd):
+        os.set_inheritable(fd, True)
+
+    return fd
