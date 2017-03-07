@@ -13,7 +13,6 @@ from .compat import (
 )
 from .interfaces import IReloaderProxy
 from .ipc import (
-    dup_fd,
     recv_fd,
     send_fd,
 )
@@ -121,7 +120,13 @@ class Worker(object):
         # not attached to sys.stdin - we will pass this to the worker while
         # it's running and then restore it when the worker is done
         # we dup it early such that it's inherited by the child
-        self.stdin_fd = dup_fd(sys.stdin.fileno())
+        self.stdin_fd = os.dup(sys.stdin.fileno())
+
+        # py34 and above sets CLOEXEC automatically on file descriptors
+        # NOTE: this isn't usually an issue because multiprocessing doesn't
+        # actually exec on linux/macos, but we're depending on the behavior
+        if hasattr(os, 'set_inheritable'):  # pragma: nocover
+            os.set_inheritable(self.stdin_fd, True)
 
         kw = dict(
             spec=self.worker_spec,
