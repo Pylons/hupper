@@ -87,6 +87,7 @@ else:
             termios.tcflush(fd, termios.TCIOFLUSH)
             termios.tcsetattr(fd, termios.TCSANOW, state)
 
+
 def dup_fd(fd):
     fd = os.dup(fd)
 
