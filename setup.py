@@ -22,7 +22,7 @@ tests_require = [
 
 setup(
     name='hupper',
-    version='0.4.2',
+    version='0.4.3',
     description='Integrated process monitor for developing servers.',
     long_description=readme + '\n\n' + changes,
     author='Michael Merickel',
