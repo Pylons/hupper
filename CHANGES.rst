@@ -1,3 +1,9 @@
+unreleased
+==========
+
+- Fix pdb and other readline-based programs to operate properly.
+  See https://github.com/Pylons/hupper/pull/15
+
 0.4.2 (2017-01-24)
 ==================
 
