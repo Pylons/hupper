@@ -15,6 +15,7 @@ from .compat import (
 from .interfaces import IReloaderProxy
 from .ipc import (
     dup_fd,
+    patch_stdin,
     recv_fd,
     send_fd,
     snapshot_termios,
@@ -237,7 +238,8 @@ def worker_main(spec, files_queue, pipe, parent_pipe, spec_args=None,
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
     # use the stdin fd passed in from the reloader process
-    sys.stdin = recv_fd(pipe, 'r')
+    stdin_fd = recv_fd(pipe, 'r')
+    patch_stdin(stdin_fd)
 
     # disable pyc files for project code because it can cause timestamp
     # issues in which files are reloaded twice
