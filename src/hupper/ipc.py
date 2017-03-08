@@ -1,4 +1,5 @@
 import os
+import sys
 
 from .compat import WIN
 
@@ -54,7 +55,10 @@ if WIN:  # pragma: no cover
         if 'a' in mode:
             flags |= os.O_APPEND
         fd = msvcrt.open_osfhandle(handle, flags)
-        return os.fdopen(fd, mode)
+        return fd
+
+    def patch_stdin(fd):
+        sys.stdin = os.fdopen(fd, 'r')
 
     def snapshot_termios(fd):
         pass
@@ -75,7 +79,15 @@ else:
 
     def recv_fd(pipe, mode):
         fd = pipe.recv()
-        return os.fdopen(fd, mode)
+        return fd
+
+    def patch_stdin(fd):
+        # Python's input() function used by pdb and other things only uses
+        # readline if stdin matches the stdin file descriptor that the
+        # process started with (0). Since multiprocessing closes it already
+        # we can just dup the new fd over it.
+        os.dup2(fd, 0)
+        sys.stdin = os.fdopen(0, 'r')
 
     def snapshot_termios(fd):
         if os.isatty(fd):
