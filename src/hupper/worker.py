@@ -14,8 +14,11 @@ from .compat import (
 )
 from .interfaces import IReloaderProxy
 from .ipc import (
+    dup_fd,
     recv_fd,
     send_fd,
+    snapshot_termios,
+    restore_termios,
 )
 
 
@@ -115,19 +118,16 @@ class Worker(object):
         self.terminated = False
         self.pid = None
         self.exitcode = None
+        self.stdin_fd = None
+        self.stdin_termios = None
 
     def start(self):
         # prepare to close our stdin by making a new copy that is
         # not attached to sys.stdin - we will pass this to the worker while
         # it's running and then restore it when the worker is done
         # we dup it early such that it's inherited by the child
-        self.stdin_fd = os.dup(sys.stdin.fileno())
-
-        # py34 and above sets CLOEXEC automatically on file descriptors
-        # NOTE: this isn't usually an issue because multiprocessing doesn't
-        # actually exec on linux/macos, but we're depending on the behavior
-        if hasattr(os, 'set_inheritable'):  # pragma: nocover
-            os.set_inheritable(self.stdin_fd, True)
+        self.stdin_fd = dup_fd(sys.stdin.fileno())
+        self.stdin_termios = snapshot_termios(self.stdin_fd)
 
         kw = dict(
             spec=self.worker_spec,
@@ -177,6 +177,10 @@ class Worker(object):
                 pass
             finally:
                 self.pipe = None
+
+        if self.stdin_termios:
+            restore_termios(sys.stdin.fileno(), self.stdin_termios)
+            self.stdin_termios = None
 
 
 # set when the current process is being monitored

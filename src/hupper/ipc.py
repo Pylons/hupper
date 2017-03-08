@@ -56,7 +56,15 @@ if WIN:  # pragma: no cover
         fd = msvcrt.open_osfhandle(handle, flags)
         return os.fdopen(fd, mode)
 
+    def snapshot_termios(fd):
+        pass
+
+    def restore_termios(fd, state):
+        pass
+
 else:
+    import termios
+
     class ProcessGroup(object):
         def add_child(self, pid):
             # nothing to do on *nix
@@ -68,3 +76,24 @@ else:
     def recv_fd(pipe, mode):
         fd = pipe.recv()
         return os.fdopen(fd, mode)
+
+    def snapshot_termios(fd):
+        if os.isatty(fd):
+            state = termios.tcgetattr(fd)
+            return state
+
+    def restore_termios(fd, state):
+        if os.isatty(fd) and state:
+            termios.tcflush(fd, termios.TCIOFLUSH)
+            termios.tcsetattr(fd, termios.TCSANOW, state)
+
+def dup_fd(fd):
+    fd = os.dup(fd)
+
+    # py34 and above sets CLOEXEC automatically on file descriptors
+    # NOTE: this isn't usually an issue because multiprocessing doesn't
+    # actually exec on linux/macos, but we're depending on the behavior
+    if hasattr(os, 'get_inheritable') and not os.get_inheritable(fd):
+        os.set_inheritable(fd, True)
+
+    return fd
