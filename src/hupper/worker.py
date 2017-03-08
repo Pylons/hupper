@@ -1,6 +1,7 @@
 import importlib
 import multiprocessing
 import os
+import signal
 import sys
 import threading
 import time
@@ -226,6 +227,10 @@ def worker_main(spec, files_queue, pipe, parent_pipe, spec_args=None,
     # close the parent end of the pipe, we aren't using it in the worker
     parent_pipe.close()
     del parent_pipe
+
+    # SIGHUP is not supported on windows
+    if hasattr(signal, 'SIGHUP'):
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
     # use the stdin fd passed in from the reloader process
     sys.stdin = recv_fd(pipe, 'r')
