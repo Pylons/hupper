@@ -13,14 +13,7 @@ from .compat import (
     get_py_path,
 )
 from .interfaces import IReloaderProxy
-from .ipc import (
-    dup_fd,
-    patch_stdin,
-    recv_fd,
-    send_fd,
-    snapshot_termios,
-    restore_termios,
-)
+from . import ipc
 
 
 class WatchSysModules(threading.Thread):
@@ -119,16 +112,15 @@ class Worker(object):
         self.terminated = False
         self.pid = None
         self.exitcode = None
-        self.stdin_fd = None
-        self.stdin_termios = None
+        self.stdin = None
 
     def start(self):
         # prepare to close our stdin by making a new copy that is
         # not attached to sys.stdin - we will pass this to the worker while
         # it's running and then restore it when the worker is done
         # we dup it early such that it's inherited by the child
-        self.stdin_fd = dup_fd(sys.stdin.fileno())
-        self.stdin_termios = snapshot_termios(self.stdin_fd)
+        self.stdin = ipc.StdinPipe()
+        self.stdin.snapshot_termios()
 
         kw = dict(
             spec=self.worker_spec,
@@ -148,7 +140,8 @@ class Worker(object):
         del self._c2p
 
         # send the stdin handle to the worker
-        send_fd(self.pipe, self.stdin_fd, self.pid)
+        ipc.send_fd(self.stdin.fd, self.pipe, self.pid)
+        self.stdin.start()
 
     def is_alive(self):
         if self.process:
@@ -163,13 +156,10 @@ class Worker(object):
         self.process.join()
         self.exitcode = self.process.exitcode
 
-        if self.stdin_fd is not None:
-            try:
-                os.close(self.stdin_fd)
-            except:  # pragma: nocover
-                pass
-            finally:
-                self.stdin_fd = None
+        if self.stdin:
+            self.stdin.stop()
+            self.stdin.restore_termios()
+            self.stdin = None
 
         if self.pipe is not None:
             try:
@@ -178,10 +168,6 @@ class Worker(object):
                 pass
             finally:
                 self.pipe = None
-
-        if self.stdin_termios:
-            restore_termios(sys.stdin.fileno(), self.stdin_termios)
-            self.stdin_termios = None
 
 
 # set when the current process is being monitored
@@ -238,8 +224,8 @@ def worker_main(spec, files_queue, pipe, parent_pipe, spec_args=None,
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
     # use the stdin fd passed in from the reloader process
-    stdin_fd = recv_fd(pipe, 'r')
-    patch_stdin(stdin_fd)
+    stdin_fd = ipc.recv_fd(pipe, 'r')
+    ipc.patch_stdin(stdin_fd)
 
     # disable pyc files for project code because it can cause timestamp
     # issues in which files are reloaded twice
