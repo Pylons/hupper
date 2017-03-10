@@ -1,5 +1,7 @@
 import os
 import sys
+import threading
+import time
 
 from .compat import WIN
 
@@ -36,7 +38,45 @@ if WIN:  # pragma: no cover
                 else:
                     raise
 
-    def send_fd(pipe, fd, pid):
+    class StdinPipe(object):
+        _bufsize = 256
+
+        def __init__(self):
+            self._thread = None
+            self._local_fd = sys.stdin.fileno()
+            self.fd, self._write_fd = os.pipe()
+            set_inheritable(self.fd)
+
+        def start(self):
+            self._running = True
+            self._thread = threading.Thread(target=self._run)
+            self._thread.start()
+
+        def _run(self):
+            while self._running:
+                if msvcrt.kbhit():
+                    ch = os.read(self._local_fd, self._bufsize)
+                    os.write(self._write_fd, ch)
+                time.sleep(0.05)
+
+        def stop(self):
+            self._running = False
+            self._thread.join()
+            self._thread = None
+
+            close_fd(self._write_fd, raises=False)
+            self._write_fd = None
+
+            close_fd(self.fd, raises=False)
+            self.fd = None
+
+        def snapshot_termios(self):
+            pass
+
+        def restore_termios(self):
+            pass
+
+    def send_fd(fd, pipe, pid):
         hf = msvcrt.get_osfhandle(fd)
         hp = winapi.OpenProcess(winapi.PROCESS_ALL_ACCESS, False, pid)
         tp = winapi.DuplicateHandle(
@@ -74,12 +114,31 @@ else:
             # nothing to do on *nix
             pass
 
-    def send_fd(pipe, fd, pid):
+    class StdinPipe(object):
+        def __init__(self):
+            self._local_fd = sys.stdin.fileno()
+            self._orig_termios = None
+            self.fd = os.dup(self._local_fd)
+            set_inheritable(self.fd)
+
+        def start(self):
+            pass
+
+        def stop(self):
+            close_fd(self.fd, raises=False)
+            self.fd = None
+
+        def snapshot_termios(self):
+            self._orig_termios = snapshot_termios(self._local_fd)
+
+        def restore_termios(self):
+            restore_termios(self._local_fd, self._orig_termios)
+
+    def send_fd(fd, pipe, pid):
         pipe.send(fd)
 
     def recv_fd(pipe, mode):
-        fd = pipe.recv()
-        return fd
+        return pipe.recv()
 
     def patch_stdin(fd):
         # Python's input() function used by pdb and other things only uses
@@ -100,13 +159,18 @@ else:
             termios.tcsetattr(fd, termios.TCSANOW, state)
 
 
-def dup_fd(fd):
-    fd = os.dup(fd)
-
+def set_inheritable(fd):
     # py34 and above sets CLOEXEC automatically on file descriptors
     # NOTE: this isn't usually an issue because multiprocessing doesn't
     # actually exec on linux/macos, but we're depending on the behavior
     if hasattr(os, 'get_inheritable') and not os.get_inheritable(fd):
         os.set_inheritable(fd, True)
 
-    return fd
+
+def close_fd(fd, raises=True):
+    if fd is not None:
+        try:
+            os.close(fd)
+        except Exception:  # pragma: nocover
+            if raises:
+                raise
