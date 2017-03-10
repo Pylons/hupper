@@ -1,5 +1,5 @@
-unreleased
-==========
+0.4.4 (2017-03-10)
+==================
 
 - Fix some versions of Windows which were failing to duplicate stdin to
   the subprocess and crashing.
