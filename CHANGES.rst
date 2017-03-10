@@ -1,3 +1,10 @@
+unreleased
+==========
+
+- Fix some versions of Windows which were failing to duplicate stdin to
+  the subprocess and crashing.
+  https://github.com/Pylons/hupper/pull/16
+
 0.4.3 (2017-03-07)
 ==================
 
