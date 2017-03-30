@@ -5,7 +5,7 @@ hupper
 .. image:: https://img.shields.io/pypi/v/hupper.svg
     :target: https://pypi.python.org/pypi/hupper
 
-.. image:: https://img.shields.io/travis/Pylons/hupper.svg
+.. image:: https://img.shields.io/travis/Pylons/hupper/master.svg
     :target: https://travis-ci.org/Pylons/hupper
 
 .. image:: https://readthedocs.org/projects/hupper/badge/?version=latest
