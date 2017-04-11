@@ -26,7 +26,7 @@ setup(
     description='Integrated process monitor for developing servers.',
     long_description=readme + '\n\n' + changes,
     author='Michael Merickel',
-    author_email='michael@merickel.org',
+    author_email='pylons-discuss@googlegroups.com',
     url='https://github.com/Pylons/hupper',
     packages=find_packages('src', exclude=['tests']),
     package_dir={'': 'src'},
