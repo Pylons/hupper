@@ -38,6 +38,12 @@ except ImportError:
         get_py_path = imp.source_from_cache
 
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+
 def is_watchdog_supported():
     """ Return ``True`` if watchdog is available."""
     try:
