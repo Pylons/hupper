@@ -103,7 +103,7 @@ class Worker(object):
         self.worker_spec = spec
         self.worker_args = args
         self.worker_kwargs = kwargs
-        self.pipe = ipc.Pipe()
+        self.pipe, self._child_pipe = ipc.Pipe()
         self.terminated = False
         self.pid = None
         self.process = None
@@ -117,12 +117,12 @@ class Worker(object):
             spec=self.worker_spec,
             spec_args=self.worker_args,
             spec_kwargs=self.worker_kwargs,
-            pipe=self.pipe,
+            pipe=self._child_pipe,
         )
         self.process = ipc.spawn(
             'hupper.worker.worker_main',
             kwargs=kw,
-            pass_fds=self.pipe.inheritable_fds,
+            pass_fds=[self._child_pipe.r_fd, self._child_pipe.w_fd],
         )
         self.pid = self.process.pid
 

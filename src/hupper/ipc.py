@@ -94,57 +94,45 @@ else:
         return handle
 
 
-class Pipe(object):
+def Pipe():
+    c2pr_fd, c2pw_fd = os.pipe()
+    p2cr_fd, p2cw_fd = os.pipe()
+
+    c1 = Connection(c2pr_fd, p2cw_fd, p2cr_fd, c2pw_fd)
+    c2 = Connection(p2cr_fd, c2pw_fd, c2pr_fd, p2cw_fd)
+    return c1, c2
+
+class Connection(object):
     """
-    A pickle-able bidirectional pipe.
+    A connection to a bi-directional pipe.
 
     """
-    def __init__(self):
-        self.is_parent = True
-        self.parent_pid = os.getpid()
-        self.c2pr_fd, self.c2pw_fd = os.pipe()
-        self.p2cr_fd, self.p2cw_fd = os.pipe()
-
-        self.inheritable_fds = [self.c2pw_fd, self.p2cr_fd]
+    def __init__(self, r_fd, w_fd, remote_r_fd, remote_w_fd):
+        self.r_fd = r_fd
+        self.w_fd = w_fd
+        self.remote_r_fd = remote_r_fd
+        self.remote_w_fd = remote_w_fd
 
     def __getstate__(self):
-        return dict(
-            parent_pid=self.parent_pid,
-            p2cr_handle=get_handle(self.p2cr_fd),
-            p2cw_handle=get_handle(self.p2cw_fd),
-            c2pr_handle=get_handle(self.c2pr_fd),
-            c2pw_handle=get_handle(self.c2pw_fd),
-        )
+        return {
+            'r_handle': get_handle(self.r_fd),
+            'w_handle': get_handle(self.w_fd),
+            'remote_r_handle': get_handle(self.remote_r_fd),
+            'remote_w_handle': get_handle(self.remote_w_fd),
+        }
 
     def __setstate__(self, state):
-        self.parent_pid = state['parent_pid']
-        self.is_parent = os.getpid() == self.parent_pid
-        if self.is_parent:
-            raise RuntimeError('pipe pickled to the same process')
-
-        self.p2cr_fd = open_handle(state['p2cr_handle'], 'rb')
-        self.p2cw_fd = open_handle(state['p2cw_handle'], 'wb')
-        self.c2pr_fd = open_handle(state['c2pr_handle'], 'rb')
-        self.c2pw_fd = open_handle(state['c2pw_handle'], 'wb')
+        self.r_fd = open_handle(state['r_handle'], 'rb')
+        self.w_fd = open_handle(state['w_handle'], 'wb')
+        self.remote_r_fd = open_handle(state['remote_r_handle'], 'rb')
+        self.remote_w_fd = open_handle(state['remote_w_handle'], 'wb')
 
     def activate(self):
-        if self.is_parent:
-            close_fd(self.c2pw_fd, raises=False)
-            close_fd(self.p2cr_fd, raises=False)
+        close_fd(self.remote_r_fd, raises=False)
+        close_fd(self.remote_w_fd, raises=False)
 
-            self.c2pr = os.fdopen(self.c2pr_fd, 'rb')
-            self.p2cw = os.fdopen(self.p2cw_fd, 'wb')
-            self._send_packet = self._send_to_child
-            self._recv_packet = self._recv_from_child
-
-        else:
-            close_fd(self.c2pr_fd, raises=False)
-            close_fd(self.p2cw_fd, raises=False)
-
-            self.p2cr = os.fdopen(self.p2cr_fd, 'rb')
-            self.c2pw = os.fdopen(self.c2pw_fd, 'wb')
-            self._send_packet = self._send_to_parent
-            self._recv_packet = self._recv_from_parent
+        self.r = os.fdopen(self.r_fd, 'rb')
+        self.w = os.fdopen(self.w_fd, 'wb')
 
         self.send_lock = threading.Lock()
         self.reader_queue = queue.Queue()
@@ -154,42 +142,17 @@ class Pipe(object):
         self.reader_thread.start()
 
     def close(self):
-        if self.is_parent:
-            self.c2pr.close()
-            self.p2cw.close()
+        self.r.close()
+        self.w.close()
 
-        else:
-            self.c2pw.close()
-            self.p2cr.close()
-
-    def _send_to_parent(self, value):
-        return self._send_into(self.c2pw, value)
-
-    def _send_to_child(self, value):
-        return self._send_into(self.p2cw, value)
-
-    def _recv_from_parent(self, timeout=None):
-        return self._recv_from(self.p2cr, timeout=timeout)
-
-    def _recv_from_child(self, timeout=None):
-        return self._recv_from(self.c2pr, timeout=timeout)
-
-    def _send_into(self, fp, value):
-        data = pickle.dumps(value)
-        with self.send_lock:
-            fp.write(struct.pack('Q', len(data)))
-            fp.write(data)
-            fp.flush()
-        return len(data) + 8
-
-    def _recv_from(self, fp, timeout=None):
+    def _recv_packet(self):
         buf = io.BytesIO()
-        chunk = fp.read(8)
+        chunk = self.r.read(8)
         if not chunk:
             return
         size = remaining = struct.unpack('Q', chunk)[0]
         while remaining > 0:
-            chunk = fp.read(remaining)
+            chunk = self.r.read(remaining)
             n = len(chunk)
             if n == 0:
                 if remaining == size:
@@ -212,7 +175,12 @@ class Pipe(object):
         self.reader_queue.put(None)
 
     def send(self, value):
-        return self._send_packet(value)
+        data = pickle.dumps(value)
+        with self.send_lock:
+            self.w.write(struct.pack('Q', len(data)))
+            self.w.write(data)
+            self.w.flush()
+        return len(data) + 8
 
     def recv(self, timeout=None):
         packet = self.reader_queue.get(block=True, timeout=timeout)
