@@ -98,8 +98,8 @@ def Pipe():
     c2pr_fd, c2pw_fd = os.pipe()
     p2cr_fd, p2cw_fd = os.pipe()
 
-    c1 = Connection(c2pr_fd, p2cw_fd, p2cr_fd, c2pw_fd)
-    c2 = Connection(p2cr_fd, c2pw_fd, c2pr_fd, p2cw_fd)
+    c1 = Connection(c2pr_fd, p2cw_fd)
+    c2 = Connection(p2cr_fd, c2pw_fd)
     return c1, c2
 
 class Connection(object):
@@ -107,30 +107,21 @@ class Connection(object):
     A connection to a bi-directional pipe.
 
     """
-    def __init__(self, r_fd, w_fd, remote_r_fd, remote_w_fd):
+    def __init__(self, r_fd, w_fd):
         self.r_fd = r_fd
         self.w_fd = w_fd
-        self.remote_r_fd = remote_r_fd
-        self.remote_w_fd = remote_w_fd
 
     def __getstate__(self):
         return {
             'r_handle': get_handle(self.r_fd),
             'w_handle': get_handle(self.w_fd),
-            'remote_r_handle': get_handle(self.remote_r_fd),
-            'remote_w_handle': get_handle(self.remote_w_fd),
         }
 
     def __setstate__(self, state):
         self.r_fd = open_handle(state['r_handle'], 'rb')
         self.w_fd = open_handle(state['w_handle'], 'wb')
-        self.remote_r_fd = open_handle(state['remote_r_handle'], 'rb')
-        self.remote_w_fd = open_handle(state['remote_w_handle'], 'wb')
 
     def activate(self):
-        close_fd(self.remote_r_fd, raises=False)
-        close_fd(self.remote_w_fd, raises=False)
-
         self.r = os.fdopen(self.r_fd, 'rb')
         self.w = os.fdopen(self.w_fd, 'wb')
 
