@@ -203,7 +203,9 @@ def set_inheritable(fd, inheritable):
             os.set_inheritable(fd, inheritable)
 
     elif WIN:
-        pass
+        h = get_handle(fd)
+        flags = winapi.HANDLE_FLAG_INHERIT if inheritable else 0
+        winapi.SetHandleInformation(h, winapi.HANDLE_FLAG_INHERIT, flags)
 
     else:
         flags = fcntl.fcntl(fd, fcntl.F_GETFD)
