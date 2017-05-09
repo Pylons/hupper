@@ -102,11 +102,14 @@ def Pipe():
     c2 = Connection(p2cr_fd, c2pw_fd)
     return c1, c2
 
+
 class Connection(object):
     """
     A connection to a bi-directional pipe.
 
     """
+    _packet_len = struct.Struct('Q')
+
     def __init__(self, r_fd, w_fd):
         self.r_fd = r_fd
         self.w_fd = w_fd
@@ -138,10 +141,10 @@ class Connection(object):
 
     def _recv_packet(self):
         buf = io.BytesIO()
-        chunk = self.r.read(8)
+        chunk = self.r.read(self._packet_len.size)
         if not chunk:
             return
-        size = remaining = struct.unpack('Q', chunk)[0]
+        size = remaining = self._packet_len.unpack(chunk)[0]
         while remaining > 0:
             chunk = self.r.read(remaining)
             n = len(chunk)
@@ -168,10 +171,10 @@ class Connection(object):
     def send(self, value):
         data = pickle.dumps(value)
         with self.send_lock:
-            self.w.write(struct.pack('Q', len(data)))
+            self.w.write(self._packet_len.pack(len(data)))
             self.w.write(data)
             self.w.flush()
-        return len(data) + 8
+        return len(data) + self._packet_len.size
 
     def recv(self, timeout=None):
         packet = self.reader_queue.get(block=True, timeout=timeout)
