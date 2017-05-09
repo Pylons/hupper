@@ -117,7 +117,6 @@ class Connection(object):
 
     """
     _packet_len = struct.Struct('Q')
-    _active = False
 
     def __init__(self, r_fd, w_fd):
         self.r_fd = r_fd
@@ -134,10 +133,6 @@ class Connection(object):
         self.w_fd = open_handle(state['w_handle'], 'wb')
 
     def activate(self):
-        self._active = True
-        self.r = os.fdopen(self.r_fd, 'rb')
-        self.w = os.fdopen(self.w_fd, 'wb')
-
         self.send_lock = threading.Lock()
         self.reader_queue = queue.Queue()
 
@@ -146,21 +141,17 @@ class Connection(object):
         self.reader_thread.start()
 
     def close(self):
-        if self._active:
-            self.r.close()
-            self.w.close()
-        else:
-            close_fd(self.r_fd)
-            close_fd(self.w_fd)
+        close_fd(self.r_fd)
+        close_fd(self.w_fd)
 
     def _recv_packet(self):
         buf = io.BytesIO()
-        chunk = self.r.read(self._packet_len.size)
+        chunk = os.read(self.r_fd, self._packet_len.size)
         if not chunk:
             return
         size = remaining = self._packet_len.unpack(chunk)[0]
         while remaining > 0:
-            chunk = self.r.read(remaining)
+            chunk = os.read(self.r_fd, remaining)
             n = len(chunk)
             if n == 0:
                 if remaining == size:
@@ -182,12 +173,16 @@ class Connection(object):
             pass
         self.reader_queue.put(None)
 
+    def _write_packet(self, data):
+        while data:
+            n = os.write(self.w_fd, data)
+            data = data[n:]
+
     def send(self, value):
         data = pickle.dumps(value)
         with self.send_lock:
-            self.w.write(self._packet_len.pack(len(data)))
-            self.w.write(data)
-            self.w.flush()
+            self._write_packet(self._packet_len.pack(len(data)))
+            self._write_packet(data)
         return len(data) + self._packet_len.size
 
     def recv(self, timeout=None):
