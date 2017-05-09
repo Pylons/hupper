@@ -70,6 +70,7 @@ if WIN:  # pragma: no cover
         return msvcrt.open_osfhandle(handle, flags)
 
 else:
+    import fcntl
     import termios
 
     class ProcessGroup(object):
@@ -94,9 +95,16 @@ else:
         return handle
 
 
+def _pipe():
+    r, w = os.pipe()
+    set_inheritable(r, False)
+    set_inheritable(w, False)
+    return r, w
+
+
 def Pipe():
-    c2pr_fd, c2pw_fd = os.pipe()
-    p2cr_fd, p2cw_fd = os.pipe()
+    c2pr_fd, c2pw_fd = _pipe()
+    p2cr_fd, p2cw_fd = _pipe()
 
     c1 = Connection(c2pr_fd, p2cw_fd)
     c2 = Connection(p2cr_fd, c2pw_fd)
@@ -109,6 +117,7 @@ class Connection(object):
 
     """
     _packet_len = struct.Struct('Q')
+    _active = False
 
     def __init__(self, r_fd, w_fd):
         self.r_fd = r_fd
@@ -125,6 +134,7 @@ class Connection(object):
         self.w_fd = open_handle(state['w_handle'], 'wb')
 
     def activate(self):
+        self._active = True
         self.r = os.fdopen(self.r_fd, 'rb')
         self.w = os.fdopen(self.w_fd, 'wb')
 
@@ -136,8 +146,12 @@ class Connection(object):
         self.reader_thread.start()
 
     def close(self):
-        self.r.close()
-        self.w.close()
+        if self._active:
+            self.r.close()
+            self.w.close()
+        else:
+            close_fd(self.r_fd)
+            close_fd(self.w_fd)
 
     def _recv_packet(self):
         buf = io.BytesIO()
@@ -181,11 +195,24 @@ class Connection(object):
         return packet
 
 
-def set_inheritable(fd):
-    # py34 and above sets CLOEXEC automatically on file descriptors
-    # and we want to prevent that from happening
-    if hasattr(os, 'get_inheritable') and not os.get_inheritable(fd):
-        os.set_inheritable(fd, True)
+def set_inheritable(fd, inheritable):
+    # On py34+ we can use os.set_inheritable but < py34 we must polyfill
+    # with fcntl and SetHandleInformation
+    if hasattr(os, 'get_inheritable'):
+        if os.get_inheritable(fd) != inheritable:
+            os.set_inheritable(fd, inheritable)
+
+    elif WIN:
+        pass
+
+    else:
+        flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+        if inheritable:
+            new_flags = flags & ~fcntl.FD_CLOEXEC
+        else:
+            new_flags = flags | fcntl.FD_CLOEXEC
+        if new_flags != flags:
+            fcntl.fcntl(fd, fcntl.F_SETFD, new_flags)
 
 
 def close_fd(fd, raises=True):
@@ -249,7 +276,7 @@ def spawn(spec, kwargs, pass_fds=()):
     """
     r, w = os.pipe()
     for fd in [r] + list(pass_fds):
-        set_inheritable(fd)
+        set_inheritable(fd, True)
 
     preparation_data = get_preparation_data()
 

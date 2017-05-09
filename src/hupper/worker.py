@@ -128,6 +128,7 @@ class Worker(object):
 
         # activate the pipe after forking
         self.pipe.activate()
+        self._child_pipe.close()
 
     def is_alive(self):
         if self.process:
