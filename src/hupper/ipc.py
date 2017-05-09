@@ -299,9 +299,6 @@ def spawn_main(pipe_handle):
 
     prepare(preparation_data)
 
-    modname, funcname = spec.rsplit('.', 1)
-    module = importlib.import_module(modname)
-    func = getattr(module, funcname)
-
+    func = resolve_spec(spec)
     func(**kwargs)
     sys.exit(0)
