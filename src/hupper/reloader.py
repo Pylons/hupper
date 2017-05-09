@@ -158,7 +158,8 @@ class Reloader(object):
                     break
 
                 if cmd[0] == 'watch':
-                    self.monitor.add_path(cmd[1])
+                    for path in cmd[1]:
+                        self.monitor.add_path(path)
 
                 else:
                     raise RuntimeError('received unknown command')

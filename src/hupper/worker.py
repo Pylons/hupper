@@ -32,20 +32,27 @@ class WatchSysModules(threading.Thread):
         self.stopped = True
 
     def update_paths(self):
-        """Check sys.modules for paths to add to our path set."""
+        """ Check sys.modules for paths to add to our path set."""
+        new_paths = []
         with self.lock:
             for path in expand_source_paths(iter_module_paths()):
                 if path not in self.paths:
                     self.paths.add(path)
-                    self.callback(path)
+                    new_paths.append(path)
+        if new_paths:
+            self.callback(new_paths)
 
     def search_traceback(self, tb):
+        """ Inspect a traceback for new paths to add to our path set."""
+        new_paths = []
         with self.lock:
             for filename, line, funcname, txt in traceback.extract_tb(tb):
                 path = os.path.abspath(filename)
                 if path not in self.paths:
                     self.paths.add(path)
-                    self.callback(path)
+                    new_paths.append(path)
+        if new_paths:
+            self.callback(new_paths)
 
 
 def expand_source_paths(paths):
@@ -128,6 +135,9 @@ class Worker(object):
 
         # activate the pipe after forking
         self.pipe.activate()
+
+        # kill the child side of the pipe after forking as the child is now
+        # responsible for it
         self._child_pipe.close()
 
     def is_alive(self):
@@ -184,12 +194,8 @@ class ReloaderProxy(IReloaderProxy):
     def __init__(self, pipe):
         self.pipe = pipe
 
-    def _watch_file(self, file):
-        self.pipe.send(('watch', os.path.abspath(file)))
-
     def watch_files(self, files):
-        for file in files:
-            self._watch_file(file)
+        self.pipe.send(('watch', files))
 
     def trigger_reload(self):
         self.pipe.send(('reload',))
@@ -216,9 +222,11 @@ def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
     _reloader_proxy = ReloaderProxy(pipe)
 
     parent_watcher = WatchForParentShutdown(pipe)
+    parent_watcher.daemon = True
     parent_watcher.start()
 
-    poller = WatchSysModules(_reloader_proxy._watch_file)
+    poller = WatchSysModules(_reloader_proxy.watch_files)
+    poller.daemon = True
     poller.start()
 
     # import the worker path before polling sys.modules
