@@ -15,7 +15,6 @@ def test_myapp_reloads_when_touching_ini(testapp):
     testapp.stop()
 
     assert len(testapp.response) == 2
-    assert testapp.stderr == ''
     assert testapp.stdout != ''
 
 
@@ -28,5 +27,4 @@ def test_myapp_reloads_when_touching_pyfile(testapp):
     testapp.stop()
 
     assert len(testapp.response) == 2
-    assert testapp.stderr == ''
     assert testapp.stdout != ''
