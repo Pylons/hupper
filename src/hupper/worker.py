@@ -1,5 +1,3 @@
-import importlib
-import multiprocessing
 import os
 import signal
 import sys
@@ -7,11 +5,9 @@ import threading
 import time
 import traceback
 
-from .compat import (
-    interrupt_main,
-    get_pyc_path,
-    get_py_path,
-)
+from .compat import get_pyc_path
+from .compat import get_py_path
+from .compat import interrupt_main
 from .interfaces import IReloaderProxy
 from . import ipc
 
@@ -36,23 +32,30 @@ class WatchSysModules(threading.Thread):
         self.stopped = True
 
     def update_paths(self):
-        """Check sys.modules for paths to add to our path set."""
+        """ Check sys.modules for paths to add to our path set."""
+        new_paths = []
         with self.lock:
-            for path in iter_source_paths(iter_module_paths()):
+            for path in expand_source_paths(iter_module_paths()):
                 if path not in self.paths:
                     self.paths.add(path)
-                    self.callback(path)
+                    new_paths.append(path)
+        if new_paths:
+            self.callback(new_paths)
 
     def search_traceback(self, tb):
+        """ Inspect a traceback for new paths to add to our path set."""
+        new_paths = []
         with self.lock:
             for filename, line, funcname, txt in traceback.extract_tb(tb):
                 path = os.path.abspath(filename)
                 if path not in self.paths:
                     self.paths.add(path)
-                    self.callback(path)
+                    new_paths.append(path)
+        if new_paths:
+            self.callback(new_paths)
 
 
-def iter_source_paths(paths):
+def expand_source_paths(paths):
     """ Convert pyc files into their source equivalents."""
     for src_path in paths:
         yield src_path
@@ -93,7 +96,7 @@ class WatchForParentShutdown(threading.Thread):
     def run(self):
         try:
             # wait until the pipe breaks
-            while self.pipe.recv_bytes():  # pragma: nocover
+            while self.pipe.recv():  # pragma: nocover
                 pass
         except EOFError:
             pass
@@ -107,45 +110,39 @@ class Worker(object):
         self.worker_spec = spec
         self.worker_args = args
         self.worker_kwargs = kwargs
-        self.files_queue = multiprocessing.Queue()
-        self.pipe, self._c2p = multiprocessing.Pipe()
+        self.pipe, self._child_pipe = ipc.Pipe()
         self.terminated = False
         self.pid = None
+        self.process = None
         self.exitcode = None
-        self.stdin = None
+        self.stdin_termios = None
 
     def start(self):
-        # prepare to close our stdin by making a new copy that is
-        # not attached to sys.stdin - we will pass this to the worker while
-        # it's running and then restore it when the worker is done
-        # we dup it early such that it's inherited by the child
-        self.stdin = ipc.StdinPipe()
-        self.stdin.snapshot_termios()
+        self.stdin_termios = ipc.snapshot_termios(sys.stdin.fileno())
 
         kw = dict(
             spec=self.worker_spec,
             spec_args=self.worker_args,
             spec_kwargs=self.worker_kwargs,
-            files_queue=self.files_queue,
-            pipe=self._c2p,
-            parent_pipe=self.pipe,
+            pipe=self._child_pipe,
         )
-        self.process = multiprocessing.Process(target=worker_main, kwargs=kw)
-        self.process.start()
-
+        self.process = ipc.spawn(
+            'hupper.worker.worker_main',
+            kwargs=kw,
+            pass_fds=[self._child_pipe.r_fd, self._child_pipe.w_fd],
+        )
         self.pid = self.process.pid
 
-        # we no longer control the worker's end of the pipe
-        self._c2p.close()
-        del self._c2p
+        # activate the pipe after forking
+        self.pipe.activate()
 
-        # send the stdin handle to the worker
-        ipc.send_fd(self.stdin.fd, self.pipe, self.pid)
-        self.stdin.start()
+        # kill the child side of the pipe after forking as the child is now
+        # responsible for it
+        self._child_pipe.close()
 
     def is_alive(self):
         if self.process:
-            return self.process.is_alive()
+            return self.process.poll() is None
         return False
 
     def terminate(self):
@@ -153,15 +150,13 @@ class Worker(object):
         self.process.terminate()
 
     def join(self):
-        self.process.join()
-        self.exitcode = self.process.exitcode
+        self.process.wait()
+        self.exitcode = self.process.returncode
 
-        if self.stdin:
-            self.stdin.stop()
-            self.stdin.restore_termios()
-            self.stdin = None
+        if self.stdin_termios:
+            ipc.restore_termios(sys.stdin.fileno(), self.stdin_termios)
 
-        if self.pipe is not None:
+        if self.pipe:
             try:
                 self.pipe.close()
             except:  # pragma: nocover
@@ -196,54 +191,46 @@ def is_active():
 
 
 class ReloaderProxy(IReloaderProxy):
-    def __init__(self, files_queue, pipe):
-        self.files_queue = files_queue
+    def __init__(self, pipe):
         self.pipe = pipe
 
     def watch_files(self, files):
-        for file in files:
-            self.files_queue.put(os.path.abspath(file))
+        self.pipe.send(('watch', files))
 
     def trigger_reload(self):
-        self.pipe.send_bytes(b'1')
+        self.pipe.send(('reload',))
 
 
-def worker_main(spec, files_queue, pipe, parent_pipe, spec_args=None,
-                spec_kwargs=None):
+def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
     if spec_args is None:
         spec_args = []
     if spec_kwargs is None:
         spec_kwargs = {}
 
-    # close the parent end of the pipe, we aren't using it in the worker
-    parent_pipe.close()
-    del parent_pipe
+    # activate the pipe after forking
+    pipe.activate()
 
     # SIGHUP is not supported on windows
     if hasattr(signal, 'SIGHUP'):
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
-
-    # use the stdin fd passed in from the reloader process
-    stdin_fd = ipc.recv_fd(pipe, 'r')
-    ipc.patch_stdin(stdin_fd)
 
     # disable pyc files for project code because it can cause timestamp
     # issues in which files are reloaded twice
     sys.dont_write_bytecode = True
 
     global _reloader_proxy
-    _reloader_proxy = ReloaderProxy(files_queue, pipe)
+    _reloader_proxy = ReloaderProxy(pipe)
 
     parent_watcher = WatchForParentShutdown(pipe)
+    parent_watcher.daemon = True
     parent_watcher.start()
 
-    poller = WatchSysModules(files_queue.put)
+    poller = WatchSysModules(_reloader_proxy.watch_files)
+    poller.daemon = True
     poller.start()
 
     # import the worker path before polling sys.modules
-    modname, funcname = spec.rsplit('.', 1)
-    module = importlib.import_module(modname)
-    func = getattr(module, funcname)
+    func = ipc.resolve_spec(spec)
 
     # start the worker
     try:

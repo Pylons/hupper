@@ -47,6 +47,9 @@ PROCESS_ALL_ACCESS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF
 
 DUPLICATE_SAME_ACCESS = 0x0002
 
+HANDLE_FLAG_INHERIT = 0x0001
+HANDLE_FLAG_PROTECT_FROM_CLOSE = 0x0002
+
 
 class IO_COUNTERS(ctypes.Structure):
     _fields_ = [
@@ -156,3 +159,8 @@ def SetInformationJobObject(hJob, infoType, jobObjectInfo):
 def AssignProcessToJobObject(hJob, hProcess):
     ret = kernel32.AssignProcessToJobObject(hJob, hProcess)
     CheckError(ret, 'failed to assign process to job object')
+
+
+def SetHandleInformation(h, dwMask, dwFlags):
+    ret = kernel32.SetHandleInformation(h, dwMask, dwFlags)
+    CheckError(ret, 'failed to set handle information')

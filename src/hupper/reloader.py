@@ -6,10 +6,8 @@ import sys
 import threading
 import time
 
-from .compat import (
-    is_watchdog_supported,
-    queue,
-)
+from .compat import is_watchdog_supported
+from .compat import queue
 from .ipc import ProcessGroup
 from .worker import (
     Worker,
@@ -152,21 +150,19 @@ class Reloader(object):
 
             while not self.monitor.is_changed() and self.worker.is_alive():
                 try:
-                    # if the child has sent any data then restart
-                    if self.worker.pipe.poll(0):
-                        # do not read, the pipe is closed after the break
-                        break
-                except EOFError:  # pragma: nocover
-                    pass
-
-                try:
-                    path = self.worker.files_queue.get(
-                        timeout=self.reload_interval,
-                    )
+                    cmd = self.worker.pipe.recv(timeout=self.reload_interval)
                 except queue.Empty:
-                    pass
+                    continue
+
+                if not cmd or cmd[0] == 'reload':
+                    break
+
+                if cmd[0] == 'watch':
+                    for path in cmd[1]:
+                        self.monitor.add_path(path)
+
                 else:
-                    self.monitor.add_path(path)
+                    raise RuntimeError('received unknown command')
 
         except KeyboardInterrupt:
             if self.worker.is_alive():
