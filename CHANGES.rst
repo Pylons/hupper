@@ -1,3 +1,12 @@
+0.5 (2017-05-10)
+================
+
+- On non-windows systems ensure an exec occurs so that the worker does not
+  share the same process space as the reloader causing certain code that
+  is imported in both to not ever be reloaded. Under the hood this was a
+  significant rewrite to use subprocess instead of multiprocessing.
+  See https://github.com/Pylons/hupper/pull/23
+
 0.4.4 (2017-03-10)
 ==================
 
