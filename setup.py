@@ -28,6 +28,7 @@ setup(
     author='Michael Merickel',
     author_email='pylons-discuss@googlegroups.com',
     url='https://github.com/Pylons/hupper',
+    license='MIT',
     packages=find_packages('src', exclude=['tests']),
     package_dir={'': 'src'},
     include_package_data=True,
