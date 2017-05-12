@@ -6,11 +6,6 @@ import sys
 PY2 = sys.version_info[0] == 2
 WIN = sys.platform == 'win32'
 
-if PY2:
-    long = long
-else:
-    long = int
-
 try:
     import queue
 except ImportError:
