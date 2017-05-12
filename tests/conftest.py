@@ -20,7 +20,7 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "rep_" + rep.when, rep)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def testapp(request):
     app = util.TestApp()
     try:
