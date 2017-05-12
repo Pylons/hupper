@@ -4,7 +4,7 @@ source =
     hupper
     tests
 omit =
-    hupper/winapi.py
+    src/hupper/winapi.py
 
 [paths]
 source =
