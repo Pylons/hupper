@@ -1,4 +1,5 @@
 import io
+import imp
 import importlib
 import os
 import struct
@@ -252,18 +253,39 @@ def get_command_line(**kwds):
     prog = 'from hupper.ipc import spawn_main; spawn_main(%s)'
     prog %= ', '.join('%s=%r' % item for item in kwds.items())
     opts = args_from_interpreter_flags()
-    return [sys.executable] + opts + ['-c', prog]
+    args = [sys.executable] + opts + ['-c', prog]
+
+    # ensure hupper is on the PYTHONPATH in the worker process
+    self_path = os.path.abspath(imp.find_module('hupper')[1])
+    extra_py_paths = [os.path.dirname(self_path)]
+
+    env = os.environ.copy()
+    env['PYTHONPATH'] = (
+        os.pathsep.join(extra_py_paths) +
+        os.pathsep +
+        env.get('PYTHONPATH', '')
+    )
+    return args, env
 
 
 def get_preparation_data():
     data = {}
     data['sys.argv'] = sys.argv
+
+    # multiprocessing does some work here to replace '' in sys.path with
+    # os.getcwd() but it is not valid to assume that os.getcwd() at the time
+    # hupper is imported is the starting folder of the process so for now
+    # we'll just assume that the user has not changed the CWD
+    data['sys.path'] = list(sys.path)
     return data
 
 
 def prepare(data):
     if 'sys.argv' in data:
         sys.argv = data['sys.argv']
+
+    if 'sys.path' in data:
+        sys.path = data['sys.path']
 
 
 def spawn(spec, kwargs, pass_fds=()):
@@ -278,8 +300,8 @@ def spawn(spec, kwargs, pass_fds=()):
     preparation_data = get_preparation_data()
 
     r_handle = get_handle(r)
-    args = get_command_line(pipe_handle=r_handle)
-    process = subprocess.Popen(args, close_fds=False)
+    args, env = get_command_line(pipe_handle=r_handle)
+    process = subprocess.Popen(args, env=env, close_fds=False)
 
     to_child = os.fdopen(w, 'wb')
     to_child.write(pickle.dumps([preparation_data, spec, kwargs]))
