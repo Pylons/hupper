@@ -22,8 +22,10 @@ tests_require = [
 
 setup(
     name='hupper',
-    version='0.5',
-    description='Integrated process monitor for developing servers.',
+    version='1.0',
+    description=(
+        'Integrated process monitor for developing and reloading daemons.'
+    ),
     long_description=readme + '\n\n' + changes,
     author='Michael Merickel',
     author_email='pylons-discuss@googlegroups.com',
@@ -41,7 +43,7 @@ setup(
     zip_safe=False,
     keywords='server daemon autoreload reloader hup file watch process',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',

@@ -1,5 +1,5 @@
-unreleased
-==========
+1.0 (2017-05-18)
+================
 
 - Copy ``sys.path`` to the worker process and ensure ``hupper`` is on the
   ``PYTHONPATH`` so that the subprocess can import it to start the worker.
