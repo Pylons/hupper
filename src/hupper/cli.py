@@ -23,4 +23,5 @@ def main():
 
     return runpy.run_module(
         args.module,
-        **{"alter_sys": True, "run_name": "__main__"})
+        alter_sys=True,
+        run_name="__main__")
