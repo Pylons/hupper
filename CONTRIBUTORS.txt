@@ -106,3 +106,4 @@ Contributors
 ------------
 
 - Michael Merickel (2016-10-21)
+- Bert JW Regeer (2017-05-17)
