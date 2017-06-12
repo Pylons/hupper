@@ -82,13 +82,16 @@ Ready to contribute? Here's how to set up `hupper` for local development.
 
     $ env/bin/tox
 
-6. Commit your changes and push your branch to GitHub::
+6. Add your name to the ``CONTRIBUTORS.txt`` file in the root of the
+   repository.
+
+7. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the GitHub website.
+8. Submit a pull request through the GitHub website.
 
 Pull Request Guidelines
 -----------------------
