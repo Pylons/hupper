@@ -39,15 +39,6 @@ except ImportError:
     import pickle
 
 
-def is_watchdog_supported():
-    """ Return ``True`` if watchdog is available."""
-    try:
-        import watchdog
-    except ImportError:
-        return False
-    return True
-
-
 ################################################
 # cross-compatible metaclass implementation
 # Copyright (c) 2010-2012 Benjamin Peterson
