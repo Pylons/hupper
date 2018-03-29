@@ -1,5 +1,5 @@
-unreleased
-==========
+1.1 (2018-03-29)
+================
 
 - Support ``-w`` on the CLI to watch custom file paths.
   See https://github.com/Pylons/hupper/pull/28
