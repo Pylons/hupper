@@ -18,9 +18,7 @@ except ImportError:
 
 
 try:
-    from importlib.util import (
-        source_from_cache as get_py_path,
-    )
+    from importlib.util import source_from_cache as get_py_path
 except ImportError:
     if PY2:
         get_py_path = lambda path: path[:-1]
