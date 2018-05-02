@@ -1,5 +1,5 @@
-unreleased
-==========
+1.2 (2018-05-01)
+================
 
 - Track only Python source files. Previously ``hupper`` would track all pyc
   and py files. Now, if a pyc file is found then the equivalent source file
