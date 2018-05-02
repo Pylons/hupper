@@ -1,3 +1,12 @@
+unreleased
+==========
+
+- Allow overriding the default monitor lookup by specifying the
+  ``HUPPER_DEFAULT_MONITOR`` environment variable as a Python dotted-path
+  to a monitor factory. For example,
+  ``HUPPER_DEFAULT_MONITOR=hupper.polling.PollingFileMonitor``.
+  See https://github.com/Pylons/hupper/pull/29
+
 1.1 (2018-03-29)
 ================
 

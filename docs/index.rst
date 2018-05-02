@@ -121,6 +121,19 @@ new files to watch. This can be done by acquiring a reference to the
 process. The :func:`hupper.start_reloader` function will return the instance
 or :func:`hupper.get_reloader` can be used as well.
 
+Overriding the default file monitor
+-----------------------------------
+
+By default, ``hupper`` will auto-select the best file monitor based on what
+is available. The preferred order is ``watchdog`` then ``polling``. If
+``watchdog`` is installed but you do not want to use it for any reason, you
+may override the default by specifying the monitor you wish to use instead in
+the ``HUPPER_DEFAULT_MONITOR`` environment variable. For example:
+
+.. code:: bash
+
+   $ HUPPER_DEFAULT_MONITOR=hupper.polling.PollingFileMonitor hupper -m foo
+
 More Information
 ================
 
