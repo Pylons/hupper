@@ -124,6 +124,8 @@ or :func:`hupper.get_reloader` can be used as well.
 Overriding the default file monitor
 -----------------------------------
 
+.. versionadded:: 1.2
+
 By default, ``hupper`` will auto-select the best file monitor based on what
 is available. The preferred order is ``watchdog`` then ``polling``. If
 ``watchdog`` is installed but you do not want to use it for any reason, you
