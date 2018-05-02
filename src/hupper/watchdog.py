@@ -40,8 +40,21 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
             if path not in self.paths:
                 self.paths.add(path)
 
-    def on_any_event(self, event):
+    def _check(self, path):
         with self.lock:
-            path = event.src_path
             if path in self.paths:
                 self.callback(path)
+
+    def on_created(self, event):
+        self._check(event.src_path)
+
+    def on_modified(self, event):
+        self._check(event.src_path)
+
+    def on_moved(self, event):
+        self._check(event.src_path)
+        self._check(event.dest_path)
+        self.add_path(event.dest_path)
+
+    def on_deleted(self, event):
+        self._check(event.src_path)
