@@ -7,6 +7,11 @@ unreleased
   ``HUPPER_DEFAULT_MONITOR=hupper.polling.PollingFileMonitor``.
   See https://github.com/Pylons/hupper/pull/29
 
+- Backward-incompatible changes to the
+  ``hupper.interfaces.IFileMonitorFactory`` API to pass arbitrary kwargs
+  to the factory.
+  See https://github.com/Pylons/hupper/pull/29
+
 1.1 (2018-03-29)
 ================
 
