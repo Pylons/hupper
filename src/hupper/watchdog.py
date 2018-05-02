@@ -17,7 +17,7 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
     ``callback`` is a callable that accepts a path to a changed file.
 
     """
-    def __init__(self, callback):
+    def __init__(self, callback, **kw):
         super(WatchdogFileMonitor, self).__init__()
         self.callback = callback
         self.paths = set()

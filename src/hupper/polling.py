@@ -16,10 +16,10 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
     disk. Do not set this too low or it will eat your CPU and kill your drive.
 
     """
-    def __init__(self, callback, poll_interval=1):
+    def __init__(self, callback, interval=1, **kw):
         super(PollingFileMonitor, self).__init__()
         self.callback = callback
-        self.poll_interval = poll_interval
+        self.poll_interval = interval
         self.paths = set()
         self.mtimes = {}
         self.lock = threading.Lock()

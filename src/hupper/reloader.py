@@ -25,8 +25,9 @@ class FileMonitorProxy(object):
     when it should reload.
 
     """
-    def __init__(self, monitor_factory, verbose=1):
-        self.monitor = monitor_factory(self.file_changed)
+    monitor = None
+
+    def __init__(self, verbose=1):
         self.verbose = verbose
         self.change_event = threading.Event()
         self.changed_paths = set()
@@ -199,7 +200,12 @@ class Reloader(object):
         self.monitor.clear_changes()
 
     def _start_monitor(self):
-        self.monitor = FileMonitorProxy(self.monitor_factory, self.verbose)
+        proxy = FileMonitorProxy(self.verbose)
+        proxy.monitor = self.monitor_factory(
+            proxy.file_changed,
+            interval=self.reload_interval,
+        )
+        self.monitor = proxy
         self.monitor.start()
 
     def _stop_monitor(self):
@@ -221,7 +227,7 @@ class Reloader(object):
             signal.signal(signal.SIGHUP, signal.SIG_DFL)
 
 
-def find_default_monitor_factory(verbose, reload_interval):
+def find_default_monitor_factory(verbose):
     spec = os.environ.get('HUPPER_DEFAULT_MONITOR')
     if spec:
         monitor_factory = resolve_spec(spec)
@@ -230,19 +236,13 @@ def find_default_monitor_factory(verbose, reload_interval):
             print('File monitor backend: ' + spec)
 
     elif is_watchdog_supported():
-        from .watchdog import WatchdogFileMonitor
-
-        def monitor_factory(callback):
-            return WatchdogFileMonitor(callback)
+        from .watchdog import WatchdogFileMonitor as monitor_factory
 
         if verbose > 1:
             print('File monitor backend: watchdog')
 
     else:
-        from .polling import PollingFileMonitor
-
-        def monitor_factory(callback):
-            return PollingFileMonitor(callback, reload_interval)
+        from .polling import PollingFileMonitor as monitor_factory
 
         if verbose > 1:
             print('File monitor backend: polling')
@@ -295,8 +295,7 @@ def start_reloader(
         return get_reloader()
 
     if monitor_factory is None:
-        monitor_factory = find_default_monitor_factory(
-            verbose, reload_interval)
+        monitor_factory = find_default_monitor_factory(verbose)
 
     reloader = Reloader(
         worker_path=worker_path,

@@ -14,7 +14,7 @@ class IReloaderProxy(with_metaclass(abc.ABCMeta)):
 
 
 class IFileMonitorFactory(with_metaclass(abc.ABCMeta)):
-    def __call__(self, callback):
+    def __call__(self, callback, **kw):
         """ Return an :class:`.IFileMonitor` instance.
 
         ``callback`` is a callable to be invoked by the ``IFileMonitor``
