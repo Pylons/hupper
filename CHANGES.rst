@@ -1,6 +1,11 @@
 unreleased
 ==========
 
+- Track only Python source files. Previously ``hupper`` would track all pyc
+  and py files. Now, if a pyc file is found then the equivalent source file
+  is searched and, if found, the pyc file is ignored.
+  See https://github.com/Pylons/hupper/pull/31
+
 - Allow overriding the default monitor lookup by specifying the
   ``HUPPER_DEFAULT_MONITOR`` environment variable as a Python dotted-path
   to a monitor factory. For example,
