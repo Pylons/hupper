@@ -1,6 +1,5 @@
 import io
 import imp
-import importlib
 import os
 import struct
 import sys
@@ -10,13 +9,7 @@ import threading
 from .compat import WIN
 from .compat import pickle
 from .compat import queue
-
-
-def resolve_spec(spec):
-    modname, funcname = spec.rsplit('.', 1)
-    module = importlib.import_module(modname)
-    func = getattr(module, funcname)
-    return func
+from .utils import resolve_spec
 
 
 if WIN:  # pragma: no cover

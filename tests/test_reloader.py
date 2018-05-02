@@ -2,15 +2,17 @@ import os
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-def make_proxy(*args, **kwargs):
+def make_proxy(monitor_factory):
     from hupper.reloader import FileMonitorProxy
-    return FileMonitorProxy(*args, **kwargs)
+    proxy = FileMonitorProxy()
+    proxy.monitor = monitor_factory(proxy.file_changed)
+    return proxy
 
 def test_proxy_proxies():
     class DummyMonitor(object):
         started = stopped = joined = False
 
-        def __call__(self, cb):
+        def __call__(self, cb, **kw):
             self.cb = cb
             return self
 
@@ -34,7 +36,7 @@ def test_proxy_proxies():
 
 def test_proxy_expands_paths(tmpdir):
     class DummyMonitor(object):
-        def __call__(self, cb):
+        def __call__(self, cb, **kw):
             self.cb = cb
             self.paths = []
             return self
@@ -59,7 +61,7 @@ def test_proxy_expands_paths(tmpdir):
 
 def test_proxy_tracks_changes(capsys):
     class DummyMonitor(object):
-        def __call__(self, cb):
+        def __call__(self, cb, **kw):
             self.cb = cb
             return self
 

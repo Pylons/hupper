@@ -1,14 +1,16 @@
 from __future__ import print_function
 
 from glob import glob
+import os
 import signal
 import sys
 import threading
 import time
 
-from .compat import is_watchdog_supported
 from .compat import queue
 from .ipc import ProcessGroup
+from .utils import resolve_spec
+from .utils import is_watchdog_supported
 from .worker import (
     Worker,
     is_active,
@@ -23,8 +25,9 @@ class FileMonitorProxy(object):
     when it should reload.
 
     """
-    def __init__(self, monitor_factory, verbose=1):
-        self.monitor = monitor_factory(self.file_changed)
+    monitor = None
+
+    def __init__(self, verbose=1):
         self.verbose = verbose
         self.change_event = threading.Event()
         self.changed_paths = set()
@@ -197,7 +200,12 @@ class Reloader(object):
         self.monitor.clear_changes()
 
     def _start_monitor(self):
-        self.monitor = FileMonitorProxy(self.monitor_factory, self.verbose)
+        proxy = FileMonitorProxy(self.verbose)
+        proxy.monitor = self.monitor_factory(
+            proxy.file_changed,
+            interval=self.reload_interval,
+        )
+        self.monitor = proxy
         self.monitor.start()
 
     def _stop_monitor(self):
@@ -217,6 +225,29 @@ class Reloader(object):
     def _restore_signals(self):
         if hasattr(signal, 'SIGHUP'):
             signal.signal(signal.SIGHUP, signal.SIG_DFL)
+
+
+def find_default_monitor_factory(verbose):
+    spec = os.environ.get('HUPPER_DEFAULT_MONITOR')
+    if spec:
+        monitor_factory = resolve_spec(spec)
+
+        if verbose > 1:
+            print('File monitor backend: ' + spec)
+
+    elif is_watchdog_supported():
+        from .watchdog import WatchdogFileMonitor as monitor_factory
+
+        if verbose > 1:
+            print('File monitor backend: watchdog')
+
+    else:
+        from .polling import PollingFileMonitor as monitor_factory
+
+        if verbose > 1:
+            print('File monitor backend: polling')
+
+    return monitor_factory
 
 
 def start_reloader(
@@ -254,28 +285,17 @@ def start_reloader(
     fallback to the less efficient
     :class:`hupper.polling.PollingFileMonitor` otherwise.
 
+    If ``monitor_factory`` is ``None`` it can be overridden by the
+    ``HUPPER_DEFAULT_MONITOR`` environment variable. It should be a dotted
+    python path pointing at an object implementing
+    :class:`hupper.interfaces.IFileMonitorFactory`.
+
     """
     if is_active():
         return get_reloader()
 
     if monitor_factory is None:
-        if is_watchdog_supported():
-            from .watchdog import WatchdogFileMonitor
-
-            def monitor_factory(callback):
-                return WatchdogFileMonitor(callback)
-
-            if verbose > 1:
-                print('File monitor backend: watchdog')
-
-        else:
-            from .polling import PollingFileMonitor
-
-            def monitor_factory(callback):
-                return PollingFileMonitor(callback, reload_interval)
-
-            if verbose > 1:
-                print('File monitor backend: polling')
+        monitor_factory = find_default_monitor_factory(verbose)
 
     reloader = Reloader(
         worker_path=worker_path,
