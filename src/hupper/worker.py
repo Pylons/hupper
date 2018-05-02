@@ -5,11 +5,11 @@ import threading
 import time
 import traceback
 
-from .compat import get_pyc_path
+from . import ipc
 from .compat import get_py_path
 from .compat import interrupt_main
 from .interfaces import IReloaderProxy
-from . import ipc
+from .utils import resolve_spec
 
 
 class WatchSysModules(threading.Thread):
@@ -58,19 +58,14 @@ class WatchSysModules(threading.Thread):
 def expand_source_paths(paths):
     """ Convert pyc files into their source equivalents."""
     for src_path in paths:
-        yield src_path
-
-        # track pyc files for py files
-        if src_path.endswith('.py'):
-            pyc_path = get_pyc_path(src_path)
-            if pyc_path:
-                yield pyc_path
-
-        # track py files for pyc files
-        elif src_path.endswith('.pyc'):
+        # only track the source path if we can find it to avoid double-reloads
+        # when the source and the compiled path change because on some
+        # platforms they are not changed at the same time
+        if src_path.endswith(('.pyc', '.pyo')):
             py_path = get_py_path(src_path)
-            if py_path:
-                yield py_path
+            if os.path.exists(py_path):
+                src_path = py_path
+        yield src_path
 
 
 def iter_module_paths(modules=None):
@@ -79,7 +74,7 @@ def iter_module_paths(modules=None):
     for module in modules:
         try:
             filename = module.__file__
-        except (AttributeError, ImportError):  # pragma: nocover
+        except (AttributeError, ImportError):  # pragma: no cover
             continue
         if filename is not None:
             abs_filename = os.path.abspath(filename)
@@ -96,7 +91,7 @@ class WatchForParentShutdown(threading.Thread):
     def run(self):
         try:
             # wait until the pipe breaks
-            while self.pipe.recv():  # pragma: nocover
+            while self.pipe.recv():  # pragma: no cover
                 pass
         except EOFError:
             pass
@@ -159,7 +154,7 @@ class Worker(object):
         if self.pipe:
             try:
                 self.pipe.close()
-            except:  # pragma: nocover
+            except Exception:  # pragma: no cover
                 pass
             finally:
                 self.pipe = None
@@ -230,18 +225,18 @@ def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
     poller.start()
 
     # import the worker path before polling sys.modules
-    func = ipc.resolve_spec(spec)
+    func = resolve_spec(spec)
 
     # start the worker
     try:
         func(*spec_args, **spec_kwargs)
-    except:
+    except BaseException:  # catch any error
         try:
             # attempt to send imported paths to the master prior to crashing
             poller.update_paths()
             poller.search_traceback(sys.exc_info()[2])
             poller.stop()
             poller.join()
-        except:  # pragma: no cover
+        except Exception:  # pragma: no cover
             pass
         raise
