@@ -22,7 +22,7 @@ tests_require = [
 
 setup(
     name='hupper',
-    version='1.1',
+    version='1.2',
     description=(
         'Integrated process monitor for developing and reloading daemons.'
     ),
