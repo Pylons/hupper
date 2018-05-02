@@ -164,7 +164,7 @@ class Reloader(object):
                     for path in cmd[1]:
                         self.monitor.add_path(path)
 
-                else:
+                else:  # pragma: no cover
                     raise RuntimeError('received unknown command')
 
         except KeyboardInterrupt:

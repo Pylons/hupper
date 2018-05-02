@@ -79,7 +79,7 @@ def iter_module_paths(modules=None):
     for module in modules:
         try:
             filename = module.__file__
-        except (AttributeError, ImportError):  # pragma: nocover
+        except (AttributeError, ImportError):  # pragma: no cover
             continue
         if filename is not None:
             abs_filename = os.path.abspath(filename)
@@ -96,7 +96,7 @@ class WatchForParentShutdown(threading.Thread):
     def run(self):
         try:
             # wait until the pipe breaks
-            while self.pipe.recv():  # pragma: nocover
+            while self.pipe.recv():  # pragma: no cover
                 pass
         except EOFError:
             pass
@@ -159,7 +159,7 @@ class Worker(object):
         if self.pipe:
             try:
                 self.pipe.close()
-            except:  # pragma: nocover
+            except Exception:  # pragma: no cover
                 pass
             finally:
                 self.pipe = None
@@ -235,13 +235,13 @@ def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
     # start the worker
     try:
         func(*spec_args, **spec_kwargs)
-    except:
+    except BaseException:  # catch any error
         try:
             # attempt to send imported paths to the master prior to crashing
             poller.update_paths()
             poller.search_traceback(sys.exc_info()[2])
             poller.stop()
             poller.join()
-        except:  # pragma: no cover
+        except Exception:  # pragma: no cover
             pass
         raise
