@@ -5,10 +5,11 @@ import threading
 import time
 import traceback
 
+from . import ipc
 from .compat import get_py_path
 from .compat import interrupt_main
 from .interfaces import IReloaderProxy
-from . import ipc
+from .utils import resolve_spec
 
 
 class WatchSysModules(threading.Thread):
@@ -224,7 +225,7 @@ def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
     poller.start()
 
     # import the worker path before polling sys.modules
-    func = ipc.resolve_spec(spec)
+    func = resolve_spec(spec)
 
     # start the worker
     try:
