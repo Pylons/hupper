@@ -228,7 +228,7 @@ class Reloader(object):
 
 
 def find_default_monitor_factory(verbose):
-    spec = os.environ.get('HUPPER_DEFAULT_MONITOR')
+    spec = os.getenv('HUPPER_DEFAULT_MONITOR')
     if spec:
         monitor_factory = resolve_spec(spec)
 

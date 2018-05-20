@@ -12,8 +12,8 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
 
     ``callback`` is a callable that accepts a path to a changed file.
 
-    ``poll_interval`` is a value in seconds between scans of the files on
-    disk. Do not set this too low or it will eat your CPU and kill your drive.
+    ``interval`` is a value in seconds between scans of the files on disk.
+    Do not set this too low or it will eat your CPU and kill your drive.
 
     """
     def __init__(self, callback, interval=1, **kw):
@@ -23,13 +23,13 @@ class PollingFileMonitor(threading.Thread, IFileMonitor):
         self.paths = set()
         self.mtimes = {}
         self.lock = threading.Lock()
+        self.enabled = True
 
     def add_path(self, path):
         with self.lock:
             self.paths.add(path)
 
     def run(self):
-        self.enabled = True
         while self.enabled:
             with self.lock:
                 paths = list(self.paths)

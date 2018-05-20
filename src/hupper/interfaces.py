@@ -37,7 +37,7 @@ class IFileMonitor(with_metaclass(abc.ABCMeta)):
     def stop(self):
         """ Trigger the monitor to stop.
 
-        This should be called before invoking :meth:`.join`.
+        This should be called before invoking ``join``.
 
         """
 

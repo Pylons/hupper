@@ -1,4 +1,4 @@
-# check ``hupper.compat.is_watchdog_supported`` before using this module
+# check ``hupper.utils.is_watchdog_supported`` before using this module
 from __future__ import absolute_import
 
 import os.path
