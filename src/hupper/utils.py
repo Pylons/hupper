@@ -1,4 +1,9 @@
 import importlib
+import json
+import os
+import subprocess
+
+from .compat import WIN
 
 
 def resolve_spec(spec):
@@ -15,3 +20,28 @@ def is_watchdog_supported():
     except ImportError:
         return False
     return True
+
+
+def is_watchman_supported():
+    """ Return ``True`` if watchman is available."""
+    if WIN:
+        # for now we aren't bothering with windows sockets
+        return False
+
+    try:
+        sockpath = get_watchman_sockpath()
+        return bool(sockpath)
+    except Exception:
+        return False
+
+
+def get_watchman_sockpath(binpath='watchman'):
+    """ Find the watchman socket or raise."""
+    path = os.getenv('WATCHMAN_SOCK')
+    if path:
+        return path
+
+    cmd = [binpath, '--output-encoding=json', 'get-sockname']
+    result = subprocess.check_output(cmd)
+    result = json.loads(result)
+    return result['sockname']

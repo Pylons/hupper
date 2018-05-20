@@ -12,6 +12,8 @@
 
   .. autofunction:: is_watchdog_supported
 
+  .. autofunction:: is_watchman_supported
+
 .. automodule:: hupper.reloader
 
   .. autoclass:: Reloader
@@ -34,9 +36,11 @@
 .. automodule:: hupper.polling
 
   .. autoclass:: PollingFileMonitor
-     :members:
 
 .. automodule:: hupper.watchdog
 
   .. autoclass:: WatchdogFileMonitor
-     :members:
+
+.. automodule:: hupper.watchman
+
+  .. autoclass:: WatchmanFileMonitor

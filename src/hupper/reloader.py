@@ -10,8 +10,11 @@ import time
 from .compat import queue
 from .ipc import ProcessGroup
 from .logger import DefaultLogger
-from .utils import resolve_spec
-from .utils import is_watchdog_supported
+from .utils import (
+    resolve_spec,
+    is_watchdog_supported,
+    is_watchman_supported,
+)
 from .worker import (
     Worker,
     is_active,
@@ -229,6 +232,11 @@ def find_default_monitor_factory(logger):
         monitor_factory = resolve_spec(spec)
 
         logger.debug('File monitor backend: ' + spec)
+
+    elif is_watchman_supported():
+        from .watchman import WatchmanFileMonitor as monitor_factory
+
+        logger.debug('File monitor backend: watchman')
 
     elif is_watchdog_supported():
         from .watchdog import WatchdogFileMonitor as monitor_factory
