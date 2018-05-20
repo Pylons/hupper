@@ -21,6 +21,14 @@ class IFileMonitorFactory(with_metaclass(abc.ABCMeta)):
         when file changes are detected. It should accept the path of
         the changed file as its only parameter.
 
+        Extra keyword-only arguments:
+
+        ``interval`` is the value of ``reload_interval`` passed to the
+        reloader and may be used to control behavior in the file monitor.
+
+        ``logger`` is an :class:`.ILogger` instance used to record runtime
+        output.
+
         """
 
 
@@ -44,3 +52,17 @@ class IFileMonitor(with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def join(self):
         """ Block until the monitor has stopped."""
+
+
+class ILogger(with_metaclass(abc.ABCMeta)):
+    @abc.abstractmethod
+    def error(self, msg):
+        """ Record an error message."""
+
+    @abc.abstractmethod
+    def info(self, msg):
+        """ Record an informational message."""
+
+    @abc.abstractmethod
+    def debug(self, msg):
+        """ Record a debug-only message."""

@@ -2,13 +2,13 @@ import os
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-def make_proxy(monitor_factory):
+def make_proxy(monitor_factory, logger):
     from hupper.reloader import FileMonitorProxy
-    proxy = FileMonitorProxy()
+    proxy = FileMonitorProxy(logger)
     proxy.monitor = monitor_factory(proxy.file_changed)
     return proxy
 
-def test_proxy_proxies():
+def test_proxy_proxies(logger):
     class DummyMonitor(object):
         started = stopped = joined = False
 
@@ -26,7 +26,7 @@ def test_proxy_proxies():
             self.joined = True
 
     monitor = DummyMonitor()
-    proxy = make_proxy(monitor)
+    proxy = make_proxy(monitor, logger)
     assert monitor.cb
     assert not monitor.started and not monitor.stopped and not monitor.joined
     proxy.start()
@@ -34,7 +34,7 @@ def test_proxy_proxies():
     proxy.stop()
     assert monitor.stopped and monitor.joined
 
-def test_proxy_expands_paths(tmpdir):
+def test_proxy_expands_paths(tmpdir, logger):
     class DummyMonitor(object):
         def __call__(self, cb, **kw):
             self.cb = cb
@@ -45,7 +45,7 @@ def test_proxy_expands_paths(tmpdir):
             self.paths.append(path)
 
     monitor = DummyMonitor()
-    proxy = make_proxy(monitor)
+    proxy = make_proxy(monitor, logger)
     proxy.add_path('foo')
     assert monitor.paths == ['foo']
 
@@ -59,24 +59,27 @@ def test_proxy_expands_paths(tmpdir):
         os.path.join(rootdir, 'foo.txt'),
     ]
 
-def test_proxy_tracks_changes(capsys):
+def test_proxy_tracks_changes(logger):
     class DummyMonitor(object):
         def __call__(self, cb, **kw):
             self.cb = cb
             return self
 
     monitor = DummyMonitor()
-    proxy = make_proxy(monitor)
+    proxy = make_proxy(monitor, logger)
     assert not proxy.is_changed()
     monitor.cb('foo.txt')
     assert proxy.is_changed()
-    out, err = capsys.readouterr()
-    assert out == 'foo.txt changed; reloading ...\n'
+    out = logger.get_output('info')
+    assert out == 'foo.txt changed; reloading ...'
+    logger.reset()
     monitor.cb('foo.txt')
-    out, err = capsys.readouterr()
+    out = logger.get_output('info')
     assert out == ''
+    logger.reset()
     proxy.clear_changes()
     assert not proxy.is_changed()
     monitor.cb('foo.txt')
-    out, err = capsys.readouterr()
-    assert out == 'foo.txt changed; reloading ...\n'
+    out = logger.get_output('info')
+    assert out == 'foo.txt changed; reloading ...'
+    logger.reset()

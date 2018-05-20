@@ -9,6 +9,7 @@ import time
 
 from .compat import queue
 from .ipc import ProcessGroup
+from .logger import DefaultLogger
 from .utils import resolve_spec
 from .utils import is_watchdog_supported
 from .worker import (
@@ -27,14 +28,10 @@ class FileMonitorProxy(object):
     """
     monitor = None
 
-    def __init__(self, verbose=1):
-        self.verbose = verbose
+    def __init__(self, logger):
+        self.logger = logger
         self.change_event = threading.Event()
         self.changed_paths = set()
-
-    def out(self, msg):
-        if self.verbose > 0:
-            print(msg)
 
     def add_path(self, path):
         # if the glob does not match any files then go ahead and pass
@@ -53,7 +50,7 @@ class FileMonitorProxy(object):
     def file_changed(self, path):
         if path not in self.changed_paths:
             self.changed_paths.add(path)
-            self.out('%s changed; reloading ...' % (path,))
+            self.logger.info('%s changed; reloading ...' % (path,))
         self.set_changed()
 
     def is_changed(self):
@@ -79,8 +76,8 @@ class Reloader(object):
     def __init__(self,
                  worker_path,
                  monitor_factory,
+                 logger,
                  reload_interval=1,
-                 verbose=1,
                  worker_args=None,
                  worker_kwargs=None,
                  ):
@@ -89,14 +86,10 @@ class Reloader(object):
         self.worker_kwargs = worker_kwargs
         self.monitor_factory = monitor_factory
         self.reload_interval = reload_interval
-        self.verbose = verbose
+        self.logger = logger
         self.monitor = None
         self.worker = None
         self.group = ProcessGroup()
-
-    def out(self, msg):
-        if self.verbose > 0:
-            print(msg)
 
     def run(self):
         """
@@ -148,7 +141,7 @@ class Reloader(object):
             # register the worker with the process group
             self.group.add_child(self.worker.pid)
 
-            self.out("Starting monitor for PID %s." % self.worker.pid)
+            self.logger.info("Starting monitor for PID %s." % self.worker.pid)
             self.monitor.clear_changes()
 
             while not self.monitor.is_changed() and self.worker.is_alive():
@@ -169,20 +162,22 @@ class Reloader(object):
 
         except KeyboardInterrupt:
             if self.worker.is_alive():
-                self.out('Waiting for server to exit ...')
+                self.logger.info('Waiting for server to exit ...')
                 time.sleep(self.reload_interval)
             raise
 
         finally:
             if self.worker.is_alive():
-                self.out('Killing server with PID %s.' % self.worker.pid)
+                self.logger.info(
+                    'Killing server with PID %s.' % self.worker.pid,
+                )
                 self.worker.terminate()
                 self.worker.join()
 
             else:
                 self.worker.join()
-                self.out('Server with PID %s exited with code %d.' %
-                         (self.worker.pid, self.worker.exitcode))
+                self.logger.info('Server with PID %s exited with code %d.' %
+                                 (self.worker.pid, self.worker.exitcode))
 
         self.monitor.clear_changes()
 
@@ -191,7 +186,7 @@ class Reloader(object):
         return force_restart
 
     def _wait_for_changes(self):
-        self.out('Waiting for changes before reloading.')
+        self.logger.info('Waiting for changes before reloading.')
         while (
             not self.monitor.wait_for_change(self.reload_interval)
         ):  # pragma: nocover
@@ -200,10 +195,11 @@ class Reloader(object):
         self.monitor.clear_changes()
 
     def _start_monitor(self):
-        proxy = FileMonitorProxy(self.verbose)
+        proxy = FileMonitorProxy(self.logger)
         proxy.monitor = self.monitor_factory(
             proxy.file_changed,
             interval=self.reload_interval,
+            logger=self.logger,
         )
         self.monitor = proxy
         self.monitor.start()
@@ -219,7 +215,7 @@ class Reloader(object):
             signal.signal(signal.SIGHUP, self._signal_sighup)
 
     def _signal_sighup(self, signum, frame):
-        self.out('Received SIGHUP, triggering a reload.')
+        self.logger.info('Received SIGHUP, triggering a reload.')
         self.monitor.set_changed()
 
     def _restore_signals(self):
@@ -227,25 +223,22 @@ class Reloader(object):
             signal.signal(signal.SIGHUP, signal.SIG_DFL)
 
 
-def find_default_monitor_factory(verbose):
+def find_default_monitor_factory(logger):
     spec = os.getenv('HUPPER_DEFAULT_MONITOR')
     if spec:
         monitor_factory = resolve_spec(spec)
 
-        if verbose > 1:
-            print('File monitor backend: ' + spec)
+        logger.debug('File monitor backend: ' + spec)
 
     elif is_watchdog_supported():
         from .watchdog import WatchdogFileMonitor as monitor_factory
 
-        if verbose > 1:
-            print('File monitor backend: watchdog')
+        logger.debug('File monitor backend: watchdog')
 
     else:
         from .polling import PollingFileMonitor as monitor_factory
 
-        if verbose > 1:
-            print('File monitor backend: polling')
+        logger.debug('File monitor backend: polling')
 
     return monitor_factory
 
@@ -276,7 +269,7 @@ def start_reloader(
     restarts.
 
     ``verbose`` controls the output. Set to ``0`` to turn off any logging
-    of activity and turn up to ``2`` for extra output.
+    of activity and turn up to ``2`` for extra output. Default is ``1``.
 
     ``monitor_factory`` is an instance of
     :class:`hupper.interfaces.IFileMonitorFactory`. If left unspecified, this
@@ -294,15 +287,17 @@ def start_reloader(
     if is_active():
         return get_reloader()
 
+    logger = DefaultLogger(verbose)
+
     if monitor_factory is None:
-        monitor_factory = find_default_monitor_factory(verbose)
+        monitor_factory = find_default_monitor_factory(logger)
 
     reloader = Reloader(
         worker_path=worker_path,
         worker_args=worker_args,
         worker_kwargs=worker_kwargs,
         reload_interval=reload_interval,
-        verbose=verbose,
         monitor_factory=monitor_factory,
+        logger=logger,
     )
     return reloader.run()
