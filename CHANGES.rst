@@ -1,6 +1,10 @@
 unreleased
 ==========
 
+- Added watchman support via ``hupper.watchman.WatchmanFileMonitor``.
+  This is the new preferred file monitor on systems supporting unix sockets.
+  See https://github.com/Pylons/hupper/pull/32
+
 - The ``hupper.watchdog.WatchdogFileMonitor`` will now output some info
   when it receives ulimit or other errors from ``watchdog``.
   See https://github.com/Pylons/hupper/pull/33

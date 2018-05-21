@@ -4,9 +4,15 @@ hupper
 
 ``hupper`` is monitor for your Python process. When files change, the process
 will be restarted. It can be extended to watch arbitrary files. Reloads can
-also be triggered manually from code. File monitoring can be done using
-basic polling or using inotify-style filesystem events if watchdog_ is
-installed.
+also be triggered manually from code.
+
+Builtin file monitors (in order of preference):
+
+- :ref:`watchman_support`
+
+- :ref:`watchdog_support`
+
+- :ref:`polling_support`
 
 Installation
 ============
@@ -44,8 +50,29 @@ Once you have a copy of the source, you can install it with:
 
 .. _Github repo: https://github.com/Pylons/hupper
 
-Watchdog support
-----------------
+Builtin File Monitors
+=====================
+
+.. _watchman_support:
+
+Watchman
+--------
+
+If the `watchman <https://facebook.github.io/watchman/>`_ daemon is running,
+it is the preferred mechanism for monitoring files.
+
+On MacOS it can be installed via:
+
+.. code-block:: console
+
+    $ brew install watchman
+
+Implementation: :class:`hupper.watchman.WatchmanFileMonitor`
+
+.. _watchdog_support:
+
+Watchdog
+--------
 
 If `watchdog <https://pypi.org/project/watchdog/>`_ is installed, it will be
 used to more efficiently watch for changes to files.
@@ -56,6 +83,20 @@ used to more efficiently watch for changes to files.
 
 This is an optional dependency and if it's not installed, then ``hupper`` will
 fallback to less efficient polling of the filesystem.
+
+Implementation: :class:`hupper.watchdog.WatchdogFileMonitor`
+
+.. _polling_support:
+
+Polling
+-------
+
+The least efficient but most portal approach is to use basic file polling.
+
+The ``reload_interval`` parameter controls how often the filesystem is scanned
+and defaults to once per second.
+
+Implementation: :class:`hupper.polling.PollingFileMonitor`
 
 Command-line Usage
 ==================
