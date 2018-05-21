@@ -22,7 +22,7 @@ tests_require = [
 
 setup(
     name='hupper',
-    version='1.2',
+    version='1.3',
     description=(
         'Integrated process monitor for developing and reloading daemons.'
     ),
@@ -39,7 +39,11 @@ setup(
         'docs': docs_require,
         'testing': tests_require,
     },
-    entry_points={"console_scripts": ["hupper = hupper.cli:main"]},
+    entry_points={
+        "console_scripts": [
+            "hupper = hupper.cli:main",
+        ],
+    },
     zip_safe=False,
     keywords='server daemon autoreload reloader hup file watch process',
     classifiers=[
