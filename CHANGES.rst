@@ -1,3 +1,18 @@
+unreleased
+==========
+
+- The ``hupper.watchdog.WatchdogFileMonitor`` will now output some info
+  when it receives ulimit or other errors from ``watchdog``.
+  See https://github.com/Pylons/hupper/pull/33
+
+- Allow ``-q`` and ``-v`` cli options to control verbosity.
+  See https://github.com/Pylons/hupper/pull/33
+
+- Pass a ``logger`` value to the ``hupper.interfaces.IFileMonitorFactory``.
+  This is an instance of ``hupper.interfaces.ILogger`` and can be used by
+  file monitors to output errors and debug information.
+  See https://github.com/Pylons/hupper/pull/33
+
 1.2 (2018-05-01)
 ================
 

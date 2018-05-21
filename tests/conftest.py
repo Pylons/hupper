@@ -35,3 +35,28 @@ def testapp(request):
             app.name, app.args, app.exitcode))
         err('-- stdout --\n%s' % app.stdout)
         err('-- stderr --\n%s' % app.stderr)
+
+class DummyLogger:
+    def __init__(self):
+        self.messages = []
+
+    def reset(self):
+        self.messages = []
+
+    def get_output(self, *levels):
+        if not levels:
+            levels = {'info', 'error', 'debug'}
+        return '\n'.join(msg for lvl, msg in self.messages if lvl in levels)
+
+    def info(self, msg):
+        self.messages.append(('info', msg))
+
+    def error(self, msg):
+        self.messages.append(('error', msg))
+
+    def debug(self, msg):
+        self.messages.append(('debug', msg))
+
+@pytest.fixture
+def logger():
+    return DummyLogger()
