@@ -1,5 +1,5 @@
-unreleased
-==========
+1.3 (2018-05-21)
+================
 
 - Added watchman support via ``hupper.watchman.WatchmanFileMonitor``.
   This is the new preferred file monitor on systems supporting unix sockets.
