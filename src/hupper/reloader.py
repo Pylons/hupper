@@ -313,6 +313,9 @@ def start_reloader(
 
 def watch(*args, **kwargs):
 
+    if is_active():
+        raise RuntimeError('process is already monitored')
+
     def wrapper(func):
         worker_path = '{}.{}'.format(func.__module__, func.__name__)
         start_reloader(worker_path, **kwargs)
