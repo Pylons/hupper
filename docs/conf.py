@@ -123,7 +123,7 @@ html_theme = 'pylons'
 
 
 html_theme_options = {
-    'github_url': 'https://github.com/Pylons/pyramid_jinja2'
+    'github_url': 'https://github.com/Pylons/hupper'
 }
 
 # The name for this set of Sphinx documents.  If None, it defaults to
