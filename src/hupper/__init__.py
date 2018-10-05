@@ -6,7 +6,6 @@ from .utils import is_watchman_supported
 
 from .reloader import (
     start_reloader,
-    watch,
 )
 from .worker import (
     is_active,

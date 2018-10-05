@@ -321,19 +321,3 @@ def start_reloader(
         logger=logger,
     )
     return reloader.run()
-
-
-def watch(*args, **kwargs):
-
-    if is_active():
-        raise RuntimeError('process is already monitored')
-
-    def wrapper(func):
-        worker_path = '{}.{}'.format(func.__module__, func.__name__)
-        start_reloader(worker_path, **kwargs)
-        return func
-
-    if args and callable(args[0]):  # Called without ().
-        return wrapper(args[0])
-
-    return wrapper
