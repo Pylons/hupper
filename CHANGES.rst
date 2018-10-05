@@ -1,6 +1,8 @@
 1.3.1 (2018-10-05)
 ==================
 
+- Support Python 3.7.
+
 - Avoid a restart-loop if the app is failing to restart on certain systems.
   There was a race where ``hupper`` failed to detect that the app was
   crashing and thus fell into its restart logic when the user manually
