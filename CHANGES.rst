@@ -1,6 +1,12 @@
 unreleased
 ==========
 
+- Avoid a restart-loop if the app is failing to restart on certain systems.
+  There was a race where ``hupper`` failed to detect that the app was
+  crashing and thus fell into its restart logic when the user manually
+  triggers an immediate reload.
+  See https://github.com/Pylons/hupper/pull/37
+
 - Ignore corrupted packets coming from watchman that occur in semi-random
   scenarios. See https://github.com/Pylons/hupper/pull/38
 
