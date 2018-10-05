@@ -1,3 +1,9 @@
+unreleased
+==========
+
+- Ignore corrupted packets coming from watchman that occur in semi-random
+  scenarios. See https://github.com/Pylons/hupper/pull/38
+
 1.3 (2018-05-21)
 ================
 
