@@ -1,5 +1,5 @@
-unreleased
-==========
+1.3.1 (2018-10-05)
+==================
 
 - Avoid a restart-loop if the app is failing to restart on certain systems.
   There was a race where ``hupper`` failed to detect that the app was
