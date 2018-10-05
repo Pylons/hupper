@@ -6,6 +6,8 @@
 
   .. autofunction:: start_reloader
 
+  .. autofunction:: watch
+
   .. autofunction:: is_active
 
   .. autofunction:: get_reloader

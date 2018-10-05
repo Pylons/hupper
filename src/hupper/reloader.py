@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import functools
 from glob import glob
 import os
 import signal
@@ -323,17 +324,34 @@ def start_reloader(
     return reloader.run()
 
 
-def watch(*args, **kwargs):
+def watch(
+    reload_interval=1,
+    verbose=1,
+    monitor_factory=None,
+):
+    """
+    A function decorator that will start the reloader.
 
-    if is_active():
-        raise RuntimeError('process is already monitored')
+    This should be used sparingly and is a no-op if invoked when the process
+    is already being monitored.
 
+    The arguments are the same as those passed to :func:`.start_reloader`.
+
+    """
     def wrapper(func):
-        worker_path = '{}.{}'.format(func.__module__, func.__name__)
-        start_reloader(worker_path, **kwargs)
-        return func
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            if is_active():
+                return func(*args, **kwargs)
 
-    if args and callable(args[0]):  # Called without ().
-        return wrapper(args[0])
-
+            worker_path = '{}.{}'.format(func.__module__, func.__name__)
+            start_reloader(
+                worker_path,
+                reload_interval=reload_interval,
+                verbose=verbose,
+                monitor_factory=monitor_factory,
+                worker_args=args,
+                worker_kwargs=kwargs,
+            )
+        return wrapped
     return wrapper
