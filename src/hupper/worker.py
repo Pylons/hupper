@@ -136,6 +136,8 @@ class Worker(object):
         self._child_pipe.close()
 
     def is_alive(self):
+        if self.exitcode is not None:
+            return False
         if self.process:
             return self.process.poll() is None
         return False
@@ -145,8 +147,7 @@ class Worker(object):
         self.process.terminate()
 
     def join(self):
-        self.process.wait()
-        self.exitcode = self.process.returncode
+        self.exitcode = self.process.wait()
 
         if self.stdin_termios:
             ipc.restore_termios(sys.stdin.fileno(), self.stdin_termios)

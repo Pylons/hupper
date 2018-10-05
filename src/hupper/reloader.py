@@ -153,7 +153,19 @@ class Reloader(object):
                 except queue.Empty:
                     continue
 
-                if not cmd or cmd[0] == 'reload':
+                if cmd is None:
+                    if self.worker.is_alive():
+                        # the worker socket has died but the process is still
+                        # alive (somehow) so wait a brief period to see if it
+                        # dies on its own - if it does die then we want to
+                        # treat it as a crash and wait for changes before
+                        # reloading, if it doesn't die then we want to force
+                        # reload the app immediately because it probably
+                        # didn't die due to some file changes
+                        time.sleep(self.reload_interval)
+                    break
+
+                if cmd[0] == 'reload':
                     break
 
                 if cmd[0] == 'watch':
