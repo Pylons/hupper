@@ -132,7 +132,11 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         line = self._readline()
         if not PY2:
             line = line.decode('utf8')
-        return json.loads(line)
+        try:
+            return json.loads(line)
+        except Exception:  # pragma: no cover
+            self.logger.info('ignoring corrupted payload from watchman')
+            return {}
 
     def _send(self, msg):
         cmd = json.dumps(msg)
