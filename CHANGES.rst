@@ -1,3 +1,9 @@
+unreleased
+==========
+
+- Ignore changes to any installed files. This includes mostly changes to any
+  files in the stdlib and ``site-packages``.
+
 1.3.1 (2018-10-05)
 ==================
 

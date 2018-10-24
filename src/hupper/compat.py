@@ -1,6 +1,7 @@
 # flake8: noqa
 import imp
 import importlib
+import site
 import sys
 
 PY2 = sys.version_info[0] == 2
@@ -32,6 +33,26 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+
+def get_site_packages():  # pragma: no cover
+    try:
+        paths = site.getsitepackages()
+        if site.ENABLE_USER_SITE:
+            paths.append(site.getusersitepackages())
+        return paths
+
+    # virtualenv does not ship with a getsitepackages impl so we fallback
+    # to using distutils if we can
+    # https://github.com/pypa/virtualenv/issues/355
+    except Exception:
+        try:
+            from distutils.sysconfig import get_python_lib
+            return [get_python_lib()]
+
+        # just incase, don't fail here, it's not worth it
+        except Exception:
+            return []
 
 
 ################################################

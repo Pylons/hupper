@@ -1,6 +1,7 @@
 import os
 import signal
 import sys
+import sysconfig
 import threading
 import time
 import traceback
@@ -8,6 +9,7 @@ import traceback
 from . import ipc
 from .compat import get_py_path
 from .compat import interrupt_main
+from .compat import get_site_packages
 from .interfaces import IReloaderProxy
 from .utils import resolve_spec
 
@@ -16,12 +18,14 @@ class WatchSysModules(threading.Thread):
     """ Poll ``sys.modules`` for imported modules."""
     poll_interval = 1
 
-    def __init__(self, callback):
+    def __init__(self, callback, ignore_installed_packages=True):
         super(WatchSysModules, self).__init__()
         self.paths = set()
         self.callback = callback
         self.lock = threading.Lock()
         self.stopped = False
+        self.ignore_installed_packages = ignore_installed_packages
+        self.installed_packages = get_installed_packages()
 
     def run(self):
         while not self.stopped:
@@ -40,7 +44,7 @@ class WatchSysModules(threading.Thread):
                     self.paths.add(path)
                     new_paths.append(path)
         if new_paths:
-            self.callback(new_paths)
+            self.watch_paths(new_paths)
 
     def search_traceback(self, tb):
         """ Inspect a traceback for new paths to add to our path set."""
@@ -52,7 +56,29 @@ class WatchSysModules(threading.Thread):
                     self.paths.add(path)
                     new_paths.append(path)
         if new_paths:
-            self.callback(new_paths)
+            self.watch_paths(new_paths)
+
+    def watch_paths(self, paths):
+        if self.ignore_installed_packages:
+            paths = [
+                path for path in paths
+                if not self.in_installed_packages(path)
+            ]
+        if paths:
+            self.callback(paths)
+
+    def in_installed_packages(self, path):
+        for prefix in self.installed_packages:
+            if path.startswith(prefix):
+                return True
+        return False
+
+
+def get_installed_packages():
+    paths = get_site_packages()
+    for path in sysconfig.get_paths().values():
+        paths.append(path)
+    return paths
 
 
 def expand_source_paths(paths):
