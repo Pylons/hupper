@@ -17,15 +17,15 @@ from .utils import resolve_spec
 class WatchSysModules(threading.Thread):
     """ Poll ``sys.modules`` for imported modules."""
     poll_interval = 1
+    ignore_system_paths = True
 
-    def __init__(self, callback, ignore_installed_packages=True):
+    def __init__(self, callback):
         super(WatchSysModules, self).__init__()
         self.paths = set()
         self.callback = callback
         self.lock = threading.Lock()
         self.stopped = False
-        self.ignore_installed_packages = ignore_installed_packages
-        self.installed_packages = get_installed_packages()
+        self.system_paths = get_system_paths()
 
     def run(self):
         while not self.stopped:
@@ -59,22 +59,22 @@ class WatchSysModules(threading.Thread):
             self.watch_paths(new_paths)
 
     def watch_paths(self, paths):
-        if self.ignore_installed_packages:
+        if self.ignore_system_paths:
             paths = [
                 path for path in paths
-                if not self.in_installed_packages(path)
+                if not self.in_system_paths(path)
             ]
         if paths:
             self.callback(paths)
 
-    def in_installed_packages(self, path):
-        for prefix in self.installed_packages:
+    def in_system_paths(self, path):
+        for prefix in self.system_paths:
             if path.startswith(prefix):
                 return True
         return False
 
 
-def get_installed_packages():
+def get_system_paths():
     paths = get_site_packages()
     for path in sysconfig.get_paths().values():
         paths.append(path)
