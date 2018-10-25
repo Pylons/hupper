@@ -1,8 +1,12 @@
 unreleased
 ==========
 
-- Ignore changes to any installed files. This includes mostly changes to any
-  files in the stdlib and ``site-packages``.
+- Ignore changes to any system / installed files. This includes mostly
+  changes to any files in the stdlib and ``site-packages``. Anything that is
+  installed in editable mode or not installed at all will still be monitored.
+  This drastically reduces the number of files that ``hupper`` needs to
+  monitor.
+  See https://github.com/Pylons/hupper/pull/40
 
 1.3.1 (2018-10-05)
 ==================
