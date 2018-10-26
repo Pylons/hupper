@@ -1,5 +1,5 @@
-unreleased
-==========
+1.4 (2018-10-26)
+================
 
 - Ignore changes to any system / installed files. This includes mostly
   changes to any files in the stdlib and ``site-packages``. Anything that is
