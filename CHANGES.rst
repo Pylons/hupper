@@ -1,3 +1,10 @@
+1.4.1 (2018-11-11)
+==================
+
+- Stop ignoring a few paths that may not be system paths in cases where the
+  virtualenv is the root of your project.
+  See https://github.com/Pylons/hupper/pull/42
+
 1.4 (2018-10-26)
 ================
 
