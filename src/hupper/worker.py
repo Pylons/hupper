@@ -76,8 +76,15 @@ class WatchSysModules(threading.Thread):
 
 def get_system_paths():
     paths = get_site_packages()
-    for path in sysconfig.get_paths().values():
-        paths.append(path)
+    for name in {
+        'stdlib',
+        'platstdlib',
+        'platlib',
+        'purelib',
+    }:
+        path = sysconfig.get_path(name)
+        if path is not None:
+            paths.append(path)
     return paths
 
 
