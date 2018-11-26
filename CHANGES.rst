@@ -1,3 +1,11 @@
+unreleased
+==========
+
+- Fix a bug prompting the "ignoring corrupted payload from watchman" message
+  and placing the file monitor in an unrecoverable state when a change
+  triggered a watchman message > 4096 bytes.
+  See https://github.com/Pylons/hupper/pull/44
+
 1.4.1 (2018-11-11)
 ==================
 

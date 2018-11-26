@@ -124,7 +124,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
             if b'\n' in b:
                 result = b''.join(self._recvbufs)
                 line, b = b.split(b'\n', 1)
-                self.buf = [b]
+                self._recvbufs = [b]
                 return result + line
             self._recvbufs.append(b)
 
