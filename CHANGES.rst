@@ -1,5 +1,5 @@
-unreleased
-==========
+1.4.2 (2018-11-26)
+==================
 
 - Fix a bug prompting the "ignoring corrupted payload from watchman" message
   and placing the file monitor in an unrecoverable state when a change
