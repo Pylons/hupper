@@ -31,17 +31,20 @@ class FileMonitorProxy(object):
     """
     monitor = None
 
-    def __init__(self, logger):
+    def __init__(self, logger, exclude_prefixes=None):
         self.logger = logger
         self.change_event = threading.Event()
         self.changed_paths = set()
+        self.exclude_prefixes = exclude_prefixes
 
     def add_path(self, path):
         # if the glob does not match any files then go ahead and pass
         # the pattern to the monitor anyway incase it is just a file that
         # is currently missing
         for p in glob(path) or [path]:
-            self.monitor.add_path(p)
+            if not self.exclude_prefixes \
+                    or not any(p.startswith(x) for x in self.exclude_prefixes):
+                self.monitor.add_path(p)
 
     def start(self):
         self.monitor.start()
@@ -83,10 +86,12 @@ class Reloader(object):
                  reload_interval=1,
                  worker_args=None,
                  worker_kwargs=None,
+                 exclude_prefixes=None,
                  ):
         self.worker_path = worker_path
         self.worker_args = worker_args
         self.worker_kwargs = worker_kwargs
+        self.exclude_prefixes = exclude_prefixes
         self.monitor_factory = monitor_factory
         self.reload_interval = reload_interval
         self.logger = logger
@@ -210,7 +215,7 @@ class Reloader(object):
         self.monitor.clear_changes()
 
     def _start_monitor(self):
-        proxy = FileMonitorProxy(self.logger)
+        proxy = FileMonitorProxy(self.logger, self.exclude_prefixes)
         proxy.monitor = self.monitor_factory(
             proxy.file_changed,
             interval=self.reload_interval,
@@ -270,6 +275,7 @@ def start_reloader(
     monitor_factory=None,
     worker_args=None,
     worker_kwargs=None,
+    exclude_prefixes=None,
 ):
     """
     Start a monitor and then fork a worker process which starts by executing
@@ -303,6 +309,8 @@ def start_reloader(
     python path pointing at an object implementing
     :class:`hupper.interfaces.IFileMonitorFactory`.
 
+    ``exclude_prefixes`` if provided must be an iterable of path prefixes to
+    exclude
     """
     if is_active():
         return get_reloader()
@@ -319,5 +327,6 @@ def start_reloader(
         reload_interval=reload_interval,
         monitor_factory=monitor_factory,
         logger=logger,
+        exclude_prefixes=exclude_prefixes,
     )
     return reloader.run()

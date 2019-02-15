@@ -83,3 +83,24 @@ def test_proxy_tracks_changes(logger):
     out = logger.get_output('info')
     assert out == 'foo.txt changed; reloading ...'
     logger.reset()
+
+def test_exclude_prefixes():
+    class DummyMonitor(object):
+        paths = set()
+
+        def add_path(self, path):
+            self.paths.add(path)
+
+    from hupper.reloader import FileMonitorProxy
+    proxy = FileMonitorProxy(None, {'/a'})
+    monitor = proxy.monitor = DummyMonitor()
+
+    path = 'foo.txt'
+    assert path not in monitor.paths
+    proxy.add_path('foo.txt')
+    assert path in monitor.paths
+
+    path = '/a/foo.txt'
+    assert path not in monitor.paths
+    proxy.add_path('/a/foo.txt')
+    assert path not in monitor.paths
