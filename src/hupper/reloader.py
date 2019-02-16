@@ -1,11 +1,13 @@
 from __future__ import print_function
 
-from glob import glob
+import fnmatch
 import os
+import re
 import signal
 import sys
 import threading
 import time
+from glob import glob
 
 from .compat import queue
 from .ipc import ProcessGroup
@@ -31,19 +33,20 @@ class FileMonitorProxy(object):
     """
     monitor = None
 
-    def __init__(self, logger, exclude_prefixes=None):
+    def __init__(self, logger, ignore_files=None):
         self.logger = logger
         self.change_event = threading.Event()
         self.changed_paths = set()
-        self.exclude_prefixes = exclude_prefixes
+        self.ignore_files = ignore_files \
+            and tuple(re.compile(fnmatch.translate(x)) for x in ignore_files)
 
     def add_path(self, path):
         # if the glob does not match any files then go ahead and pass
         # the pattern to the monitor anyway incase it is just a file that
         # is currently missing
         for p in glob(path) or [path]:
-            if not self.exclude_prefixes \
-                    or not any(p.startswith(x) for x in self.exclude_prefixes):
+            if not self.ignore_files \
+                    or not any(x.search(p) for x in self.ignore_files):
                 self.monitor.add_path(p)
 
     def start(self):
@@ -86,12 +89,12 @@ class Reloader(object):
                  reload_interval=1,
                  worker_args=None,
                  worker_kwargs=None,
-                 exclude_prefixes=None,
+                 ignore_files=None,
                  ):
         self.worker_path = worker_path
         self.worker_args = worker_args
         self.worker_kwargs = worker_kwargs
-        self.exclude_prefixes = exclude_prefixes
+        self.ignore_files = ignore_files
         self.monitor_factory = monitor_factory
         self.reload_interval = reload_interval
         self.logger = logger
@@ -215,7 +218,7 @@ class Reloader(object):
         self.monitor.clear_changes()
 
     def _start_monitor(self):
-        proxy = FileMonitorProxy(self.logger, self.exclude_prefixes)
+        proxy = FileMonitorProxy(self.logger, self.ignore_files)
         proxy.monitor = self.monitor_factory(
             proxy.file_changed,
             interval=self.reload_interval,
@@ -275,7 +278,7 @@ def start_reloader(
     monitor_factory=None,
     worker_args=None,
     worker_kwargs=None,
-    exclude_prefixes=None,
+    ignore_files=None,
 ):
     """
     Start a monitor and then fork a worker process which starts by executing
@@ -309,8 +312,8 @@ def start_reloader(
     python path pointing at an object implementing
     :class:`hupper.interfaces.IFileMonitorFactory`.
 
-    ``exclude_prefixes`` if provided must be an iterable of path prefixes to
-    exclude
+    ``ignore_files`` if provided must be an iterable of shell-style patterns to
+    ignore
     """
     if is_active():
         return get_reloader()
@@ -327,6 +330,6 @@ def start_reloader(
         reload_interval=reload_interval,
         monitor_factory=monitor_factory,
         logger=logger,
-        exclude_prefixes=exclude_prefixes,
+        ignore_files=ignore_files,
     )
     return reloader.run()
