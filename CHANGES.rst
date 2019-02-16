@@ -1,5 +1,5 @@
-unreleased
-==========
+1.5 (2019-02-16)
+================
 
 - Add support for ignoring custom patterns via the new ``ignore_files``
   option on ``hupper.start_reloader``. The ``hupper`` cli also supports

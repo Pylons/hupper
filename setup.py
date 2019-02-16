@@ -15,7 +15,7 @@ tests_require = ['watchdog', 'pytest', 'pytest-cov', 'mock']
 
 setup(
     name='hupper',
-    version='1.4.2',
+    version='1.5',
     description=(
         'Integrated process monitor for developing and reloading daemons.'
     ),
