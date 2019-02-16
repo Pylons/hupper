@@ -37,16 +37,17 @@ class FileMonitorProxy(object):
         self.logger = logger
         self.change_event = threading.Event()
         self.changed_paths = set()
-        self.ignore_files = ignore_files \
-            and [re.compile(fnmatch.translate(x)) for x in set(ignore_files)]
+        self.ignore_files = [
+            re.compile(fnmatch.translate(x))
+            for x in set(ignore_files or [])
+        ]
 
     def add_path(self, path):
         # if the glob does not match any files then go ahead and pass
         # the pattern to the monitor anyway incase it is just a file that
         # is currently missing
         for p in glob(path) or [path]:
-            if not self.ignore_files \
-                    or not any(x.match(p) for x in self.ignore_files):
+            if not any(x.match(p) for x in self.ignore_files):
                 self.monitor.add_path(p)
 
     def start(self):
@@ -312,8 +313,8 @@ def start_reloader(
     python path pointing at an object implementing
     :class:`hupper.interfaces.IFileMonitorFactory`.
 
-    ``ignore_files`` if provided must be an iterable of shell-style patterns to
-    ignore
+    ``ignore_files`` if provided must be an iterable of shell-style patterns
+    to ignore.
     """
     if is_active():
         return get_reloader()
