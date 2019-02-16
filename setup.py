@@ -1,24 +1,17 @@
 from setuptools import setup, find_packages
 
+
 def readfile(name):
     with open(name) as f:
         return f.read()
 
+
 readme = readfile('README.rst')
 changes = readfile('CHANGES.rst')
 
-docs_require = [
-    'watchdog',
-    'Sphinx',
-    'pylons-sphinx-themes',
-]
+docs_require = ['watchdog', 'Sphinx', 'pylons-sphinx-themes']
 
-tests_require = [
-    'watchdog',
-    'pytest',
-    'pytest-cov',
-    'mock',
-]
+tests_require = ['watchdog', 'pytest', 'pytest-cov', 'mock']
 
 setup(
     name='hupper',
@@ -35,15 +28,8 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
-    extras_require={
-        'docs': docs_require,
-        'testing': tests_require,
-    },
-    entry_points={
-        "console_scripts": [
-            "hupper = hupper.cli:main",
-        ],
-    },
+    extras_require={'docs': docs_require, 'testing': tests_require},
+    entry_points={"console_scripts": ["hupper = hupper.cli:main"]},
     zip_safe=False,
     keywords='server daemon autoreload reloader hup file watch process',
     classifiers=[

@@ -11,8 +11,9 @@ def parse_options(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--reload', action='store_true')
     parser.add_argument('--callback-file')
-    parser.add_argument('--watch-file', action='append', dest='watch_files',
-                        default=[])
+    parser.add_argument(
+        '--watch-file', action='append', dest='watch_files', default=[]
+    )
     parser.add_argument('--watchman', action='store_true')
     parser.add_argument('--watchdog', action='store_true')
     parser.add_argument('--poll', action='store_true')
@@ -29,6 +30,7 @@ def main(args=None):
         kw = {}
         if opts.poll:
             from hupper.polling import PollingFileMonitor
+
             pkw = {}
             if opts.poll_interval:
                 pkw['poll_interval'] = opts.poll_interval
@@ -36,10 +38,12 @@ def main(args=None):
 
         if opts.watchdog:
             from hupper.watchdog import WatchdogFileMonitor
+
             kw['monitor_factory'] = WatchdogFileMonitor
 
         if opts.watchman:
             from hupper.watchman import WatchmanFileMonitor
+
             kw['monitor_factory'] = WatchmanFileMonitor
 
         if opts.reload_interval:

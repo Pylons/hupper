@@ -18,6 +18,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
     ``callback`` is a callable that accepts a path to a changed file.
 
     """
+
     def __init__(
         self,
         callback,
@@ -95,20 +96,20 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         return get_watchman_sockpath(self.binpath)
 
     def _schedule(self, dirpath):
-        self._send([
-            'subscribe',
-            dirpath,
-            dirpath,
-            {
-                # +1 second because we don't want any buffered changes
-                # if the daemon is already watching the folder
-                'since': int(time.time() + 1),
-                'expression': [
-                    'type', 'f',
-                ],
-                'fields': ['name'],
-            },
-        ])
+        self._send(
+            [
+                'subscribe',
+                dirpath,
+                dirpath,
+                {
+                    # +1 second because we don't want any buffered changes
+                    # if the daemon is already watching the folder
+                    'since': int(time.time() + 1),
+                    'expression': ['type', 'f'],
+                    'fields': ['name'],
+                },
+            ]
+        )
 
     def _readline(self):
         # buffer may already have a line

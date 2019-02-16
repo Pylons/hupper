@@ -12,16 +12,8 @@ from glob import glob
 from .compat import queue
 from .ipc import ProcessGroup
 from .logger import DefaultLogger
-from .utils import (
-    resolve_spec,
-    is_watchdog_supported,
-    is_watchman_supported,
-)
-from .worker import (
-    Worker,
-    is_active,
-    get_reloader,
-)
+from .utils import resolve_spec, is_watchdog_supported, is_watchman_supported
+from .worker import Worker, is_active, get_reloader
 
 
 class FileMonitorProxy(object):
@@ -31,6 +23,7 @@ class FileMonitorProxy(object):
     when it should reload.
 
     """
+
     monitor = None
 
     def __init__(self, logger, ignore_files=None):
@@ -38,8 +31,7 @@ class FileMonitorProxy(object):
         self.change_event = threading.Event()
         self.changed_paths = set()
         self.ignore_files = [
-            re.compile(fnmatch.translate(x))
-            for x in set(ignore_files or [])
+            re.compile(fnmatch.translate(x)) for x in set(ignore_files or [])
         ]
 
     def add_path(self, path):
@@ -83,15 +75,17 @@ class Reloader(object):
     restarting a new worker process.
 
     """
-    def __init__(self,
-                 worker_path,
-                 monitor_factory,
-                 logger,
-                 reload_interval=1,
-                 worker_args=None,
-                 worker_kwargs=None,
-                 ignore_files=None,
-                 ):
+
+    def __init__(
+        self,
+        worker_path,
+        monitor_factory,
+        logger,
+        reload_interval=1,
+        worker_args=None,
+        worker_kwargs=None,
+        ignore_files=None,
+    ):
         self.worker_path = worker_path
         self.worker_args = worker_args
         self.worker_kwargs = worker_kwargs
@@ -143,9 +137,7 @@ class Reloader(object):
 
     def _run_worker(self):
         self.worker = Worker(
-            self.worker_path,
-            args=self.worker_args,
-            kwargs=self.worker_kwargs,
+            self.worker_path, args=self.worker_args, kwargs=self.worker_kwargs
         )
         self.worker.start()
 
@@ -193,15 +185,17 @@ class Reloader(object):
         finally:
             if self.worker.is_alive():
                 self.logger.info(
-                    'Killing server with PID %s.' % self.worker.pid,
+                    'Killing server with PID %s.' % self.worker.pid
                 )
                 self.worker.terminate()
                 self.worker.join()
 
             else:
                 self.worker.join()
-                self.logger.info('Server with PID %s exited with code %d.' %
-                                 (self.worker.pid, self.worker.exitcode))
+                self.logger.info(
+                    'Server with PID %s exited with code %d.'
+                    % (self.worker.pid, self.worker.exitcode)
+                )
 
         self.monitor.clear_changes()
 
@@ -211,8 +205,8 @@ class Reloader(object):
 
     def _wait_for_changes(self):
         self.logger.info('Waiting for changes before reloading.')
-        while (
-            not self.monitor.wait_for_change(self.reload_interval)
+        while not self.monitor.wait_for_change(
+            self.reload_interval
         ):  # pragma: nocover
             pass
 

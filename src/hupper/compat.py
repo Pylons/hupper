@@ -48,6 +48,7 @@ def get_site_packages():  # pragma: no cover
     except Exception:
         try:
             from distutils.sysconfig import get_python_lib
+
             return [get_python_lib()]
 
         # just incase, don't fail here, it's not worth it

@@ -28,13 +28,15 @@ def testapp(request):
     finally:
         app.stop()
     if (
-        request.node.rep_call.failed
-        and app.exitcode is not None
+        request.node.rep_call.failed and app.exitcode is not None
     ):  # pragma: no cover
-        err('-- test app failed --\nname=%s\nargs=%s\ncode=%s' % (
-            app.name, app.args, app.exitcode))
+        err(
+            '-- test app failed --\nname=%s\nargs=%s\ncode=%s'
+            % (app.name, app.args, app.exitcode)
+        )
         err('-- stdout --\n%s' % app.stdout)
         err('-- stderr --\n%s' % app.stderr)
+
 
 class DummyLogger:
     def __init__(self):
@@ -56,6 +58,7 @@ class DummyLogger:
 
     def debug(self, msg):
         self.messages.append(('debug', msg))
+
 
 @pytest.fixture
 def logger():

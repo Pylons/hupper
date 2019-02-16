@@ -2,11 +2,14 @@ import os
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+
 def make_proxy(monitor_factory, logger):
     from hupper.reloader import FileMonitorProxy
+
     proxy = FileMonitorProxy(logger)
     proxy.monitor = monitor_factory(proxy.file_changed)
     return proxy
+
 
 def test_proxy_proxies(logger):
     class DummyMonitor(object):
@@ -34,6 +37,7 @@ def test_proxy_proxies(logger):
     proxy.stop()
     assert monitor.stopped and monitor.joined
 
+
 def test_proxy_expands_paths(tmpdir, logger):
     class DummyMonitor(object):
         def __call__(self, cb, **kw):
@@ -58,6 +62,7 @@ def test_proxy_expands_paths(tmpdir, logger):
         os.path.join(rootdir, 'bar.txt'),
         os.path.join(rootdir, 'foo.txt'),
     ]
+
 
 def test_proxy_tracks_changes(logger):
     class DummyMonitor(object):
@@ -84,6 +89,7 @@ def test_proxy_tracks_changes(logger):
     assert out == 'foo.txt changed; reloading ...'
     logger.reset()
 
+
 def test_ignore_files():
     class DummyMonitor(object):
         paths = set()
@@ -92,6 +98,7 @@ def test_ignore_files():
             self.paths.add(path)
 
     from hupper.reloader import FileMonitorProxy
+
     proxy = FileMonitorProxy(None, {'/a/*'})
     monitor = proxy.monitor = DummyMonitor()
 

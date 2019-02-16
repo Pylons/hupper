@@ -26,9 +26,7 @@ def main():
         level = LogLevel.INFO
 
     reloader = start_reloader(
-        "hupper.cli.main",
-        verbose=level,
-        ignore_files=args.ignore,
+        "hupper.cli.main", verbose=level, ignore_files=args.ignore
     )
 
     sys.argv[1:] = unknown_args
@@ -37,7 +35,4 @@ def main():
     if args.watch:
         reloader.watch_files(args.watch)
 
-    return runpy.run_module(
-        args.module,
-        alter_sys=True,
-        run_name="__main__")
+    return runpy.run_module(args.module, alter_sys=True, run_name="__main__")

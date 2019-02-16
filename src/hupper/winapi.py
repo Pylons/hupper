@@ -118,14 +118,22 @@ def CheckError(result, msg):
 
 
 def DuplicateHandle(
-    hSourceProcess, hSourceHandle, hTargetProcess,
-    desiredAccess, inheritHandle, options
+    hSourceProcess,
+    hSourceHandle,
+    hTargetProcess,
+    desiredAccess,
+    inheritHandle,
+    options,
 ):
     targetHandle = wintypes.HANDLE()
     ret = kernel32.DuplicateHandle(
-        hSourceProcess, hSourceHandle, hTargetProcess,
+        hSourceProcess,
+        hSourceHandle,
+        hTargetProcess,
         ctypes.byref(targetHandle),
-        desiredAccess, inheritHandle, options,
+        desiredAccess,
+        inheritHandle,
+        options,
     )
     CheckError(ret, 'failed to duplicate handle')
     return Handle(targetHandle.value)
@@ -150,7 +158,9 @@ def CreateJobObject(jobAttributes, name):
 
 def SetInformationJobObject(hJob, infoType, jobObjectInfo):
     ret = kernel32.SetInformationJobObject(
-        hJob, infoType, ctypes.byref(jobObjectInfo),
+        hJob,
+        infoType,
+        ctypes.byref(jobObjectInfo),
         ctypes.sizeof(jobObjectInfo),
     )
     CheckError(ret, 'failed to set information job object')

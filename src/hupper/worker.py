@@ -16,6 +16,7 @@ from .utils import resolve_spec
 
 class WatchSysModules(threading.Thread):
     """ Poll ``sys.modules`` for imported modules."""
+
     poll_interval = 1
     ignore_system_paths = True
 
@@ -60,10 +61,7 @@ class WatchSysModules(threading.Thread):
 
     def watch_paths(self, paths):
         if self.ignore_system_paths:
-            paths = [
-                path for path in paths
-                if not self.in_system_paths(path)
-            ]
+            paths = [path for path in paths if not self.in_system_paths(path)]
         if paths:
             self.callback(paths)
 
@@ -76,12 +74,7 @@ class WatchSysModules(threading.Thread):
 
 def get_system_paths():
     paths = get_site_packages()
-    for name in {
-        'stdlib',
-        'platstdlib',
-        'platlib',
-        'purelib',
-    }:
+    for name in {'stdlib', 'platstdlib', 'platlib', 'purelib'}:
         path = sysconfig.get_path(name)
         if path is not None:
             paths.append(path)
@@ -117,6 +110,7 @@ def iter_module_paths(modules=None):
 
 class WatchForParentShutdown(threading.Thread):
     """ Watch the pipe to ensure the parent is still alive."""
+
     def __init__(self, pipe):
         super(WatchForParentShutdown, self).__init__()
         self.pipe = pipe
@@ -133,6 +127,7 @@ class WatchForParentShutdown(threading.Thread):
 
 class Worker(object):
     """ A helper object for managing a worker process lifecycle. """
+
     def __init__(self, spec, args=None, kwargs=None):
         super(Worker, self).__init__()
         self.worker_spec = spec

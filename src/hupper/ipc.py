@@ -63,6 +63,7 @@ if WIN:  # pragma: no cover
             flags |= os.O_APPEND
         return msvcrt.open_osfhandle(handle, flags)
 
+
 else:
     import fcntl
     import termios
@@ -110,6 +111,7 @@ class Connection(object):
     A connection to a bi-directional pipe.
 
     """
+
     _packet_len = struct.Struct('Q')
 
     def __init__(self, r_fd, w_fd):
@@ -254,9 +256,9 @@ def get_command_line(**kwds):
 
     env = os.environ.copy()
     env['PYTHONPATH'] = (
-        os.pathsep.join(extra_py_paths) +
-        os.pathsep +
-        env.get('PYTHONPATH', '')
+        os.pathsep.join(extra_py_paths)
+        + os.pathsep
+        + env.get('PYTHONPATH', '')
     )
     return args, env
 

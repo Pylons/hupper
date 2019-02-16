@@ -19,6 +19,7 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
     ``logger`` is an :class:`hupper.interfaces.ILogger` instance.
 
     """
+
     def __init__(self, callback, logger, **kw):
         super(WatchdogFileMonitor, self).__init__()
         self.callback = callback
