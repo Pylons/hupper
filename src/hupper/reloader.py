@@ -38,7 +38,7 @@ class FileMonitorProxy(object):
         self.change_event = threading.Event()
         self.changed_paths = set()
         self.ignore_files = ignore_files \
-            and tuple(re.compile(fnmatch.translate(x)) for x in ignore_files)
+            and [re.compile(fnmatch.translate(x)) for x in set(ignore_files)]
 
     def add_path(self, path):
         # if the glob does not match any files then go ahead and pass
