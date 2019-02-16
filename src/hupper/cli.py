@@ -10,6 +10,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", dest="module", required=True)
     parser.add_argument("-w", dest="watch", action="append")
+    parser.add_argument("-x", dest="ignore", action="append")
     parser.add_argument("-v", dest="verbose", action='store_true')
     parser.add_argument("-q", dest="quiet", action='store_true')
 
@@ -27,6 +28,7 @@ def main():
     reloader = start_reloader(
         "hupper.cli.main",
         verbose=level,
+        ignore_files=args.ignore,
     )
 
     sys.argv[1:] = unknown_args
