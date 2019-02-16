@@ -2,7 +2,8 @@ unreleased
 ==========
 
 - Add support for ignoring custom patterns via the new ``ignore_files``
-  option on ``hupper.start_reloader``.
+  option on ``hupper.start_reloader``. The ``hupper`` cli also supports
+  ignoring files via the ``-x`` option.
   See https://github.com/Pylons/hupper/pull/46
 
 1.4.2 (2018-11-26)
