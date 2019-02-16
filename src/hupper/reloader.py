@@ -46,7 +46,7 @@ class FileMonitorProxy(object):
         # is currently missing
         for p in glob(path) or [path]:
             if not self.ignore_files \
-                    or not any(x.search(p) for x in self.ignore_files):
+                    or not any(x.match(p) for x in self.ignore_files):
                 self.monitor.add_path(p)
 
     def start(self):
