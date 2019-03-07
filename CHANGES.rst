@@ -1,3 +1,13 @@
+unreleased
+==========
+
+- On systems that support ``SIGKILL`` and ``SIGTERM`` (not Windows), ``hupper``
+  will now send a ``SIGKILL`` to the worker process as a last resort. Normally,
+  a ``SIGINT`` (Ctrl-C) or ``SIGTERM`` (on reload) will kill the worker. If,
+  within ``shutdown_interval`` seconds, the worker doesn't exit, it will
+  receive a ``SIGKILL``.
+  See https://github.com/Pylons/hupper/pull/48
+
 1.5 (2019-02-16)
 ================
 

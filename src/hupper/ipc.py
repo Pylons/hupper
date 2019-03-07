@@ -9,6 +9,7 @@ import threading
 from .compat import WIN
 from .compat import pickle
 from .compat import queue
+from .compat import subprocess_wait_with_timeout
 from .utils import resolve_spec
 
 
@@ -316,3 +317,19 @@ def spawn_main(pipe_handle):
     func = resolve_spec(spec)
     func(**kwargs)
     sys.exit(0)
+
+
+def wait(process, timeout=None):
+    if timeout is None:
+        return process.wait()
+
+    if timeout == 0:
+        return process.poll()
+
+    return subprocess_wait_with_timeout(process, timeout)
+
+
+def kill(process, soft=False):
+    if soft:
+        return process.terminate()
+    return process.kill()

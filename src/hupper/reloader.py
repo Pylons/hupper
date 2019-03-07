@@ -12,7 +12,10 @@ from glob import glob
 from .compat import queue
 from .ipc import ProcessGroup
 from .logger import DefaultLogger
-from .utils import resolve_spec, is_watchdog_supported, is_watchman_supported
+from .utils import default
+from .utils import is_watchdog_supported
+from .utils import is_watchman_supported
+from .utils import resolve_spec
 from .worker import Worker, is_active, get_reloader
 
 
@@ -82,6 +85,7 @@ class Reloader(object):
         monitor_factory,
         logger,
         reload_interval=1,
+        shutdown_interval=1,
         worker_args=None,
         worker_kwargs=None,
         ignore_files=None,
@@ -92,6 +96,7 @@ class Reloader(object):
         self.ignore_files = ignore_files
         self.monitor_factory = monitor_factory
         self.reload_interval = reload_interval
+        self.shutdown_interval = shutdown_interval
         self.logger = logger
         self.monitor = None
         self.group = ProcessGroup()
@@ -139,6 +144,7 @@ class Reloader(object):
             self.worker_path, args=self.worker_args, kwargs=self.worker_kwargs
         )
         worker.start()
+        force_restart = False
 
         try:
             # register the worker with the process group
@@ -147,30 +153,26 @@ class Reloader(object):
             self.logger.info('Starting monitor for PID %s.' % worker.pid)
             self.monitor.clear_changes()
 
-            while not self.monitor.is_changed() and worker.is_alive():
+            while worker.is_alive():
+                if self.monitor.is_changed():
+                    force_restart = True
+                    break
+
                 try:
                     cmd = worker.pipe.recv(timeout=self.reload_interval)
                 except queue.Empty:
                     continue
 
                 if cmd is None:
-                    if worker.is_alive():
-                        # the worker socket has died but the process is still
-                        # alive (somehow) so wait a brief period to see if it
-                        # dies on its own - if it does die then we want to
-                        # treat it as a crash and wait for changes before
-                        # reloading, if it doesn't die then we want to force
-                        # reload the app immediately because it probably
-                        # didn't die due to some file changes
-                        self.logger.info(
-                            'Broken pipe to server with PID %s, waiting to '
-                            'see if it dies.' % worker.pid
-                        )
-                        time.sleep(self.reload_interval)
+                    self.logger.info(
+                        'Broken pipe to server, triggering a reload.'
+                    )
+                    force_restart = True
                     break
 
                 if cmd[0] == 'reload':
                     self.logger.debug('Server triggered a reload.')
+                    force_restart = True
                     break
 
                 if cmd[0] == 'watch':
@@ -180,27 +182,32 @@ class Reloader(object):
                 else:  # pragma: no cover
                     raise RuntimeError('received unknown command')
 
+            if worker.is_alive() and self.shutdown_interval is not None:
+                self.logger.info('Gracefully killing the server.')
+                worker.kill(soft=True)
+                worker.wait(self.shutdown_interval)
+
         except KeyboardInterrupt:
             if worker.is_alive():
-                self.logger.info('Waiting for server to exit ...')
-                time.sleep(self.reload_interval)
+                self.logger.info(
+                    'Received interrupt, waiting for server to exit ...'
+                )
+                if self.shutdown_interval is not None:
+                    worker.wait(self.shutdown_interval)
             raise
 
         finally:
             if worker.is_alive():
-                self.logger.info('Killing server with PID %s.' % worker.pid)
-                worker.terminate()
+                self.logger.info('Server did not exit, forcefully killing.')
+                worker.kill()
                 worker.join()
 
             else:
                 worker.join()
-                self.logger.info(
-                    'Server with PID %s exited with code %d.'
-                    % (worker.pid, worker.exitcode)
-                )
+            self.logger.debug('Server exited with code %d.' % worker.exitcode)
 
         self.monitor.clear_changes()
-        return worker.terminated
+        return force_restart
 
     def _wait_for_changes(self):
         self.logger.info('Waiting for changes before reloading.')
@@ -268,6 +275,7 @@ def find_default_monitor_factory(logger):
 def start_reloader(
     worker_path,
     reload_interval=1,
+    shutdown_interval=default,
     verbose=1,
     monitor_factory=None,
     worker_args=None,
@@ -289,7 +297,11 @@ def start_reloader(
     is invoking ``start_reloader`` in the first place.
 
     ``reload_interval`` is a value in seconds and will be used to throttle
-    restarts.
+    restarts. Default is ``1``.
+
+    ``shutdown_interval`` is a value in seconds and will be used to trigger
+    a graceful shutdown of the server. Set to ``None`` to disable the graceful
+    shutdown. Default is the same as ``reload_interval``.
 
     ``verbose`` controls the output. Set to ``0`` to turn off any logging
     of activity and turn up to ``2`` for extra output. Default is ``1``.
@@ -317,11 +329,15 @@ def start_reloader(
     if monitor_factory is None:
         monitor_factory = find_default_monitor_factory(logger)
 
+    if shutdown_interval is default:
+        shutdown_interval = reload_interval
+
     reloader = Reloader(
         worker_path=worker_path,
         worker_args=worker_args,
         worker_kwargs=worker_kwargs,
         reload_interval=reload_interval,
+        shutdown_interval=shutdown_interval,
         monitor_factory=monitor_factory,
         logger=logger,
         ignore_files=ignore_files,

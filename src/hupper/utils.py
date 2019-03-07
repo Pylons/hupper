@@ -6,6 +6,17 @@ import subprocess
 from .compat import WIN
 
 
+class Sentinel(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return '<{0}>'.format(self.name)
+
+
+default = Sentinel('default')
+
+
 def resolve_spec(spec):
     modname, funcname = spec.rsplit('.', 1)
     module = importlib.import_module(modname)
