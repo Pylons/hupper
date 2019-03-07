@@ -8,6 +8,10 @@ unreleased
   receive a ``SIGKILL``.
   See https://github.com/Pylons/hupper/pull/48
 
+- Support a ``logger`` argument to ``hupper.start_reloader`` to override
+  the default logger that outputs messages to ``sys.stderr``.
+  See https://github.com/Pylons/hupper/pull/49
+
 1.5 (2019-02-16)
 ================
 
