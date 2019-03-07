@@ -180,15 +180,15 @@ class Reloader(object):
 
             if worker.is_alive() and self.shutdown_interval > 0:
                 self.logger.info('Gracefully killing the server.')
-                worker.terminate()
-                time.sleep(self.shutdown_interval)
+                worker.kill(soft=True)
+                worker.wait(self.shutdown_interval)
 
         except KeyboardInterrupt:
             if worker.is_alive():
                 self.logger.info(
                     'Received interrupt, waiting for server to exit ...'
                 )
-                time.sleep(self.shutdown_interval)
+                worker.wait(self.shutdown_interval)
             raise
 
         finally:

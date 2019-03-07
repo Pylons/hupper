@@ -166,17 +166,17 @@ class Worker(object):
         if self.exitcode is not None:
             return False
         if self.process:
-            return self.process.poll() is None
+            return ipc.wait(self.process, timeout=0) is None
         return False
 
-    def kill(self):
-        self.process.kill()
+    def kill(self, soft=False):
+        return ipc.kill(self.process, soft=soft)
 
-    def terminate(self):
-        self.process.terminate()
+    def wait(self, timeout=None):
+        return ipc.wait(self.process, timeout=timeout)
 
     def join(self):
-        self.exitcode = self.process.wait()
+        self.exitcode = self.wait()
 
         if self.stdin_termios:
             ipc.restore_termios(sys.stdin.fileno(), self.stdin_termios)

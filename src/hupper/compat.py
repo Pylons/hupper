@@ -2,7 +2,9 @@
 import imp
 import importlib
 import site
+import subprocess
 import sys
+import time
 
 PY2 = sys.version_info[0] == 2
 WIN = sys.platform == 'win32'
@@ -62,3 +64,26 @@ def get_site_packages():  # pragma: no cover
 def with_metaclass(meta, base=object):
     """Create a base class with a metaclass."""
     return meta("%sBase" % meta.__name__, (base,), {})
+
+
+if PY2:
+
+    def subprocess_wait_with_timeout(process, timeout):
+        max_time = time.time() + timeout
+        while process.poll() is None:
+            dt = max_time - time.time()
+            if dt <= 0:
+                break
+            if dt > 0.5:
+                dt = 0.5
+            time.sleep(dt)
+        return process.poll()
+
+
+else:
+
+    def subprocess_wait_with_timeout(process, timeout):
+        try:
+            return process.wait(timeout)
+        except subprocess.TimeoutExpired:
+            pass
