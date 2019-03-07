@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import fnmatch
 import os
 import re
@@ -277,6 +275,7 @@ def start_reloader(
     reload_interval=1,
     shutdown_interval=default,
     verbose=1,
+    logger=None,
     monitor_factory=None,
     worker_args=None,
     worker_kwargs=None,
@@ -306,6 +305,9 @@ def start_reloader(
     ``verbose`` controls the output. Set to ``0`` to turn off any logging
     of activity and turn up to ``2`` for extra output. Default is ``1``.
 
+    ``logger``, if supplied, supersedes ``verbose`` and should be an object
+    implementing :class:`hupper.interfaces.ILogger`.
+
     ``monitor_factory`` is an instance of
     :class:`hupper.interfaces.IFileMonitorFactory`. If left unspecified, this
     will try to create a :class:`hupper.watchdog.WatchdogFileMonitor` if
@@ -324,7 +326,8 @@ def start_reloader(
     if is_active():
         return get_reloader()
 
-    logger = DefaultLogger(verbose)
+    if logger is None:
+        logger = DefaultLogger(verbose)
 
     if monitor_factory is None:
         monitor_factory = find_default_monitor_factory(logger)
