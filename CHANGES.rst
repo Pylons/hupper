@@ -1,3 +1,15 @@
+unreleased
+==========
+
+- On non-Windows systems, send a SIGKILL instead of SIGTERM to ensure the
+  worker process is killed.
+  See https://github.com/Pylons/hupper/pull/48
+
+- On non-Windows systems, support a graceful shutdown when reloading a worker
+  by first sending a SIGTERM, waiting ``shutdown_interval`` seconds, then
+  sending a SIGKILL.
+  See https://github.com/Pylons/hupper/pull/48
+
 1.5 (2019-02-16)
 ================
 
