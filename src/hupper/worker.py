@@ -134,7 +134,6 @@ class Worker(object):
         self.worker_args = args
         self.worker_kwargs = kwargs
         self.pipe, self._child_pipe = ipc.Pipe()
-        self.terminated = False
         self.pid = None
         self.process = None
         self.exitcode = None
@@ -170,8 +169,10 @@ class Worker(object):
             return self.process.poll() is None
         return False
 
+    def kill(self):
+        self.process.kill()
+
     def terminate(self):
-        self.terminated = True
         self.process.terminate()
 
     def join(self):
