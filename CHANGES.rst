@@ -1,5 +1,5 @@
-unreleased
-==========
+1.6 (2019-03-06)
+================
 
 - On systems that support ``SIGKILL`` and ``SIGTERM`` (not Windows), ``hupper``
   will now send a ``SIGKILL`` to the worker process as a last resort. Normally,
