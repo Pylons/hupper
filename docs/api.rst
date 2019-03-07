@@ -33,6 +33,10 @@
     :members:
     :special-members:
 
+  .. autoclass:: ILogger
+    :members:
+    :special-members:
+
 .. automodule:: hupper.polling
 
   .. autoclass:: PollingFileMonitor
