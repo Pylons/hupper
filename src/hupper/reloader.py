@@ -164,6 +164,7 @@ class Reloader(object):
                     self.logger.info(
                         'Broken pipe to server, triggering a reload.'
                     )
+                    force_restart = True
                     break
 
                 if cmd[0] == 'reload':
