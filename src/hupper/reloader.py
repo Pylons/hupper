@@ -12,7 +12,10 @@ from glob import glob
 from .compat import queue
 from .ipc import ProcessGroup
 from .logger import DefaultLogger
-from .utils import resolve_spec, is_watchdog_supported, is_watchman_supported
+from .utils import default
+from .utils import is_watchdog_supported
+from .utils import is_watchman_supported
+from .utils import resolve_spec
 from .worker import Worker, is_active, get_reloader
 
 
@@ -179,7 +182,7 @@ class Reloader(object):
                 else:  # pragma: no cover
                     raise RuntimeError('received unknown command')
 
-            if worker.is_alive() and self.shutdown_interval > 0:
+            if worker.is_alive() and self.shutdown_interval is not None:
                 self.logger.info('Gracefully killing the server.')
                 worker.kill(soft=True)
                 worker.wait(self.shutdown_interval)
@@ -189,7 +192,8 @@ class Reloader(object):
                 self.logger.info(
                     'Received interrupt, waiting for server to exit ...'
                 )
-                worker.wait(self.shutdown_interval)
+                if self.shutdown_interval is not None:
+                    worker.wait(self.shutdown_interval)
             raise
 
         finally:
@@ -271,7 +275,7 @@ def find_default_monitor_factory(logger):
 def start_reloader(
     worker_path,
     reload_interval=1,
-    shutdown_interval=None,
+    shutdown_interval=default,
     verbose=1,
     monitor_factory=None,
     worker_args=None,
@@ -293,11 +297,11 @@ def start_reloader(
     is invoking ``start_reloader`` in the first place.
 
     ``reload_interval`` is a value in seconds and will be used to throttle
-    restarts.
+    restarts. Default is ``1``.
 
     ``shutdown_interval`` is a value in seconds and will be used to trigger
-    a graceful shutdown of the server. Defaults is the same as
-    ``reload_interval``.
+    a graceful shutdown of the server. Set to ``None`` to disable the graceful
+    shutdown. Default is the same as ``reload_interval``.
 
     ``verbose`` controls the output. Set to ``0`` to turn off any logging
     of activity and turn up to ``2`` for extra output. Default is ``1``.
@@ -325,7 +329,7 @@ def start_reloader(
     if monitor_factory is None:
         monitor_factory = find_default_monitor_factory(logger)
 
-    if shutdown_interval is None:
+    if shutdown_interval is default:
         shutdown_interval = reload_interval
 
     reloader = Reloader(
