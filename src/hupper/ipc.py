@@ -212,7 +212,7 @@ def close_fd(fd, raises=True):
     if fd is not None:
         try:
             os.close(fd)
-        except Exception:  # pragma: nocover
+        except Exception:  # pragma: no cover
             if raises:
                 raise
 
