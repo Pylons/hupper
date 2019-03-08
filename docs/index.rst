@@ -91,7 +91,7 @@ Implementation: :class:`hupper.watchdog.WatchdogFileMonitor`
 Polling
 -------
 
-The least efficient but most portal approach is to use basic file polling.
+The least efficient but most portable approach is to use basic file polling.
 
 The ``reload_interval`` parameter controls how often the filesystem is scanned
 and defaults to once per second.
