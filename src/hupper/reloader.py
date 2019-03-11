@@ -162,10 +162,26 @@ class Reloader(object):
                     continue
 
                 if cmd is None:
-                    self.logger.info(
-                        'Broken pipe to server, triggering a reload.'
-                    )
-                    force_restart = True
+                    if worker.is_alive():
+                        # the worker socket has died but the process is still
+                        # alive (somehow) so wait a brief period to see if it
+                        # dies on its own - if it does die then we want to
+                        # treat it as a crash and wait for changes before
+                        # reloading, if it doesn't die then we want to force
+                        # reload the app immediately because it probably
+                        # didn't die due to some file changes
+                        time.sleep(self.reload_interval)
+
+                    if worker.is_alive():
+                        self.logger.info(
+                            'Broken pipe to server, triggering a reload.'
+                        )
+                        force_restart = True
+
+                    else:
+                        self.logger.debug(
+                            'Broken pipe to server, looks like a crash.'
+                        )
                     break
 
                 if cmd[0] == 'reload':
