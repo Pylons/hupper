@@ -1,3 +1,10 @@
+unreleased
+==========
+
+- If the worker crashes immediately, sometimes ``hupper`` would go into a
+  restart loop instead of waiting for a code change.
+  See https://github.com/Pylons/hupper/pull/50
+
 1.6 (2019-03-06)
 ================
 
