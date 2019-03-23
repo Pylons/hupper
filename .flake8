@@ -1,4 +1,5 @@
 [flake8]
+max-line-length = 79
 ignore =
     # E203: whitespace before ':' (black fails to be PEP8 compliant)
     E203
