@@ -41,9 +41,11 @@ path in string format. For example, ``myapp.scripts.serve.main``.
     import hupper
     import waitress
 
+
     def wsgi_app(environ, start_response):
-        start_response('200 OK', [('Content-Type', 'text/plain'])
-        yield [b'hello']
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        yield b'hello'
+
 
     def main(args=sys.argv[1:]):
         if '--reload' in args:
