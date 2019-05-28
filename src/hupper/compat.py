@@ -37,10 +37,13 @@ except ImportError:
     import pickle
 
 
-if PY2 or sys.version_info[1]<5:
+if PY2 or sys.version_info[1] < 5:
+    from glob import glob as gg
+
     def glob(pathname, recursive=False):
-        from glob import glob as gg
         return gg(pathname)
+
+
 else:
     from glob import glob
 
