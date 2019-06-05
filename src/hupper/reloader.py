@@ -5,9 +5,8 @@ import signal
 import sys
 import threading
 import time
-from glob import glob
 
-from .compat import queue
+from .compat import queue, glob
 from .ipc import ProcessGroup
 from .logger import DefaultLogger
 from .utils import default
@@ -39,7 +38,7 @@ class FileMonitorProxy(object):
         # if the glob does not match any files then go ahead and pass
         # the pattern to the monitor anyway incase it is just a file that
         # is currently missing
-        for p in glob(path) or [path]:
+        for p in glob(path, recursive=True) or [path]:
             if not any(x.match(p) for x in self.ignore_files):
                 self.monitor.add_path(p)
 

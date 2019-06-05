@@ -37,6 +37,17 @@ except ImportError:
     import pickle
 
 
+if PY2 or sys.version_info[1] < 5:
+    from glob import glob as gg
+
+    def glob(pathname, recursive=False):
+        return gg(pathname)
+
+
+else:
+    from glob import glob
+
+
 def get_site_packages():  # pragma: no cover
     try:
         paths = site.getsitepackages()
