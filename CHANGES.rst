@@ -1,3 +1,9 @@
+1.7 (2019-06-04)
+================
+
+- On Python 3.5+ support recursive glob syntax in ``reloader.watch_files``.
+  See https://github.com/Pylons/hupper/pull/52
+
 1.6.1 (2019-03-11)
 ==================
 
