@@ -149,7 +149,7 @@ class Worker(object):
             pipe=self._child_pipe,
         )
         self.process = ipc.spawn(
-            'hupper.worker.worker_main',
+            __name__ + '.worker_main',
             kwargs=kw,
             pass_fds=[self._child_pipe.r_fd, self._child_pipe.w_fd],
         )

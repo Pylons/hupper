@@ -27,3 +27,14 @@ class DefaultLogger(ILogger):
 
     def debug(self, msg):
         self._out(LogLevel.DEBUG, msg)
+
+
+class SilentLogger(ILogger):
+    def error(self, msg):
+        pass
+
+    def info(self, msg):
+        pass
+
+    def debug(self, msg):
+        pass
