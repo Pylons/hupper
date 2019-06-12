@@ -280,9 +280,12 @@ def _run_worker(
 
 
 def wait_main():
-    reloader = get_reloader()
-    input('')
-    reloader.trigger_reload()
+    try:
+        reloader = get_reloader()
+        input('')
+        reloader.trigger_reload()
+    except KeyboardInterrupt:
+        pass
 
 
 def find_default_monitor_factory(logger):
