@@ -1,3 +1,11 @@
+1.8 (2019-06-11)
+================
+
+- If the worker process crashes, ``hupper`` can be forced to reload the worker
+  by pressing the ``ENTER`` key in the terminal instead of waiting to change a
+  file.
+  See https://github.com/Pylons/hupper/pull/53
+
 1.7 (2019-06-04)
 ================
 
