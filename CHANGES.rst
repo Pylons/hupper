@@ -1,3 +1,9 @@
+1.8.1 (2019-06-12)
+==================
+
+- Do not show the ``KeyboardInterrupt`` stacktrace when killing ``hupper``
+  while waiting for a reload.
+
 1.8 (2019-06-11)
 ================
 
