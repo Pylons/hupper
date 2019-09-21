@@ -6,6 +6,18 @@ from .logger import LogLevel
 from .reloader import start_reloader
 
 
+def shutdown_interval_parser(string):
+    """Parses the shutdown interval onto a float > 0.0."""
+    msg = "Shutdown interval must be a float greater than 0"
+    try:
+        value = float(string)
+        if value <= 0.0:
+            raise argparse.ArgumentTypeError(msg)
+        return value
+    except ValueError:
+        raise argparse.ArgumentTypeError(msg)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", dest="module", required=True)
@@ -13,6 +25,9 @@ def main():
     parser.add_argument("-x", dest="ignore", action="append")
     parser.add_argument("-v", dest="verbose", action='store_true')
     parser.add_argument("-q", dest="quiet", action='store_true')
+    parser.add_argument(
+        "-i", "--shutdown-interval", type=shutdown_interval_parser
+    )
 
     args, unknown_args = parser.parse_known_args()
 
@@ -26,7 +41,10 @@ def main():
         level = LogLevel.INFO
 
     reloader = start_reloader(
-        "hupper.cli.main", verbose=level, ignore_files=args.ignore
+        "hupper.cli.main",
+        verbose=level,
+        ignore_files=args.ignore,
+        shutdown_interval=args.shutdown_interval,
     )
 
     sys.argv[1:] = unknown_args
