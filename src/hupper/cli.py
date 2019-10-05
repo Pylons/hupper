@@ -7,11 +7,11 @@ from .reloader import start_reloader
 
 
 def shutdown_interval_parser(string):
-    """Parses the shutdown interval onto a float > 0.0."""
-    msg = "Shutdown interval must be a float greater than 0"
+    """Parses the shutdown interval onto an int greater than 0."""
+    msg = "Shutdown interval must be an int greater than 0"
     try:
-        value = float(string)
-        if value <= 0.0:
+        value = int(string)
+        if value <= 0:
             raise argparse.ArgumentTypeError(msg)
         return value
     except ValueError:
