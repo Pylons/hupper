@@ -25,9 +25,7 @@ def main():
     parser.add_argument("-x", dest="ignore", action="append")
     parser.add_argument("-v", dest="verbose", action='store_true')
     parser.add_argument("-q", dest="quiet", action='store_true')
-    parser.add_argument(
-        "-i", "--shutdown-interval", type=shutdown_interval_parser
-    )
+    parser.add_argument("--shutdown-interval", type=shutdown_interval_parser)
 
     args, unknown_args = parser.parse_known_args()
 
