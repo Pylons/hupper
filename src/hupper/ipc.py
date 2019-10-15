@@ -10,6 +10,7 @@ from .compat import WIN
 from .compat import pickle
 from .compat import queue
 from .compat import subprocess_wait_with_timeout
+from .utils import is_stream_interactive
 from .utils import resolve_spec
 
 
@@ -45,10 +46,10 @@ if WIN:  # pragma: no cover
                 else:
                     raise
 
-    def snapshot_termios(fd):
+    def snapshot_termios(stream):
         pass
 
-    def restore_termios(fd, state):
+    def restore_termios(stream, state):
         pass
 
     def get_handle(fd):
@@ -74,13 +75,14 @@ else:
             # nothing to do on *nix
             pass
 
-    def snapshot_termios(fd):
-        if os.isatty(fd):
-            state = termios.tcgetattr(fd)
+    def snapshot_termios(stream):
+        if is_stream_interactive(stream):
+            state = termios.tcgetattr(stream.fileno())
             return state
 
-    def restore_termios(fd, state):
-        if os.isatty(fd) and state:
+    def restore_termios(stream, state):
+        if state and is_stream_interactive(stream):
+            fd = stream.fileno()
             termios.tcflush(fd, termios.TCIOFLUSH)
             termios.tcsetattr(fd, termios.TCSANOW, state)
 

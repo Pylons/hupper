@@ -1,3 +1,10 @@
+unreleased
+==========
+
+- Do not choke when stdin is not a TTY while waiting for changes after a
+  crash. For example, when running in Docker Compose.
+  See https://github.com/Pylons/hupper/pull/58
+
 1.8.1 (2019-06-12)
 ==================
 
