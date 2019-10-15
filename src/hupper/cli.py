@@ -51,7 +51,7 @@ def main():
         "hupper.cli.main",
         verbose=level,
         ignore_files=args.ignore,
-        **reloader_kw,
+        **reloader_kw
     )
 
     sys.argv[1:] = unknown_args
