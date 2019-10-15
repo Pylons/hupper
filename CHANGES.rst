@@ -1,5 +1,5 @@
-unreleased
-==========
+1.9 (2019-10-14)
+================
 
 - Support ``--shutdown-interval`` on the ``hupper`` CLI.
   See https://github.com/Pylons/hupper/pull/56
