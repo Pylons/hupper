@@ -57,5 +57,6 @@ def get_watchman_sockpath(binpath='watchman'):
     result = json.loads(result)
     return result['sockname']
 
+
 def is_stream_interactive(stream):
     return stream is not None and stream.isatty()
