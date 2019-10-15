@@ -140,7 +140,7 @@ class Worker(object):
         self.stdin_termios = None
 
     def start(self):
-        self.stdin_termios = ipc.snapshot_termios(sys.stdin.fileno())
+        self.stdin_termios = ipc.snapshot_termios(sys.stdin)
 
         kw = dict(
             spec=self.worker_spec,
@@ -179,7 +179,7 @@ class Worker(object):
         self.exitcode = self.wait()
 
         if self.stdin_termios:
-            ipc.restore_termios(sys.stdin.fileno(), self.stdin_termios)
+            ipc.restore_termios(sys.stdin, self.stdin_termios)
 
         if self.pipe:
             try:

@@ -10,6 +10,7 @@ from .compat import queue, glob
 from .ipc import ProcessGroup
 from .logger import DefaultLogger, SilentLogger
 from .utils import default
+from .utils import is_stream_interactive
 from .utils import is_watchdog_supported
 from .utils import is_watchman_supported
 from .utils import resolve_spec
@@ -159,7 +160,6 @@ class Reloader(object):
         )
 
     def _wait_for_changes(self):
-        self.logger.info('Press ENTER or change a file to reload.')
         worker = Worker(__name__ + '.wait_main')
         return _run_worker(
             worker,
@@ -282,8 +282,14 @@ def _run_worker(
 def wait_main():
     try:
         reloader = get_reloader()
-        input('')
-        reloader.trigger_reload()
+        if is_stream_interactive(sys.stdin):
+            input('Press ENTER or change a file to reload.\n')
+            reloader.trigger_reload()
+        else:
+            # just block while we wait for a file to change
+            print('Waiting for a file to change before reload.')
+            while True:
+                time.sleep(10)
     except KeyboardInterrupt:
         pass
 
