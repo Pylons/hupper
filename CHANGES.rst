@@ -1,6 +1,12 @@
 unreleased
 ==========
 
+- Support ``--shutdown-interval`` on the ``hupper`` CLI.
+  See https://github.com/Pylons/hupper/pull/56
+
+- Support ``--reload-interval`` on the ``hupper`` CLI.
+  See https://github.com/Pylons/hupper/pull/59
+
 - Do not choke when stdin is not a TTY while waiting for changes after a
   crash. For example, when running in Docker Compose.
   See https://github.com/Pylons/hupper/pull/58
