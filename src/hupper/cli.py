@@ -6,9 +6,9 @@ from .logger import LogLevel
 from .reloader import start_reloader
 
 
-def shutdown_interval_parser(string):
-    """Parses the shutdown interval onto an int greater than 0."""
-    msg = "Shutdown interval must be an int greater than 0"
+def interval_parser(string):
+    """Parses the shutdown or reload interval into an int greater than 0."""
+    msg = "Interval must be an int greater than 0"
     try:
         value = int(string)
         if value <= 0:
@@ -25,7 +25,8 @@ def main():
     parser.add_argument("-x", dest="ignore", action="append")
     parser.add_argument("-v", dest="verbose", action='store_true')
     parser.add_argument("-q", dest="quiet", action='store_true')
-    parser.add_argument("--shutdown-interval", type=shutdown_interval_parser)
+    parser.add_argument("--shutdown-interval", type=interval_parser)
+    parser.add_argument("--reload-interval", type=interval_parser)
 
     args, unknown_args = parser.parse_known_args()
 
@@ -38,11 +39,19 @@ def main():
     else:
         level = LogLevel.INFO
 
+    # start_reloader has defaults for some values so we avoid passing
+    # arguments if we don't have to
+    reloader_kw = {}
+    if args.reload_interval is not None:
+        reloader_kw['reload_interval'] = args.reload_interval
+    if args.shutdown_interval is not None:
+        reloader_kw['shutdown_interval'] = args.shutdown_interval
+
     reloader = start_reloader(
         "hupper.cli.main",
         verbose=level,
         ignore_files=args.ignore,
-        shutdown_interval=args.shutdown_interval,
+        **reloader_kw
     )
 
     sys.argv[1:] = unknown_args
