@@ -1,3 +1,11 @@
+1.9.1 (2019-11-12)
+==================
+
+- Support some scenarios in which user code is symlinked ``site-packages``.
+  These were previously being ignored by the file monitor but should now
+  be tracked.
+  See https://github.com/Pylons/hupper/pull/61
+
 1.9 (2019-10-14)
 ================
 
