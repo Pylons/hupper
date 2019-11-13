@@ -266,11 +266,16 @@ def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
         func(*spec_args, **spec_kwargs)
     except BaseException:  # catch any error
         try:
-            # attempt to send imported paths to the master prior to crashing
-            poller.update_paths()
+            # add files from the traceback before crashing
             poller.search_traceback(sys.exc_info()[2])
+        except Exception:  # pragma: no cover
+            pass
+        raise
+    finally:
+        try:
+            # attempt to send imported paths to the master prior to closing
+            poller.update_paths()
             poller.stop()
             poller.join()
         except Exception:  # pragma: no cover
             pass
-        raise
