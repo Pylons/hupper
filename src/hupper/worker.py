@@ -66,10 +66,11 @@ class WatchSysModules(threading.Thread):
             self.callback(paths)
 
     def in_system_paths(self, path):
+        # use realpath to only ignore files that live in a system path
+        # versus a symlink which lives elsewhere
+        path = os.path.realpath(path)
         for prefix in self.system_paths:
-            # use realpath to only ignore files that live in a system path
-            # versus a symlink which lives elsewhere
-            if os.path.realpath(path).startswith(prefix):
+            if path.startswith(prefix):
                 return True
         return False
 
