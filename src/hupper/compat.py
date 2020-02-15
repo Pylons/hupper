@@ -9,10 +9,6 @@ import time
 PY2 = sys.version_info[0] == 2
 WIN = sys.platform == 'win32'
 
-try:
-    import queue
-except ImportError:
-    import Queue as queue
 
 try:
     from _thread import interrupt_main

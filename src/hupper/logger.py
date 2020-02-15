@@ -20,13 +20,13 @@ class DefaultLogger(ILogger):
             print(msg, file=sys.stderr)
 
     def error(self, msg):
-        self._out(LogLevel.ERROR, msg)
+        self._out(LogLevel.ERROR, '[ERROR] ' + msg)
 
     def info(self, msg):
         self._out(LogLevel.INFO, msg)
 
     def debug(self, msg):
-        self._out(LogLevel.DEBUG, msg)
+        self._out(LogLevel.DEBUG, '[DEBUG] ' + msg)
 
 
 class SilentLogger(ILogger):
