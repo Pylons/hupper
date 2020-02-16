@@ -64,18 +64,27 @@ class FileMonitorProxy(object):
 
 
 class ControlSignal:
-    SIGHUP = b'1'
-    SIGTERM = b'2'
-    SIGCHLD = b'3'
-    FILE_CHANGED = b'4'
-    WORKER_COMMAND = b'5'
+    byte = lambda x: chr(x).encode('ascii')
+
+    SIGINT = byte(1)
+    SIGHUP = byte(2)
+    SIGTERM = byte(3)
+    SIGCHLD = byte(4)
+    FILE_CHANGED = byte(10)
+    WORKER_COMMAND = byte(11)
+
+    del byte
 
 
 class WorkerResult:
-    BROKEN_PIPE = 'broken_pipe'
+    # exit - do not reload
     EXIT = 'exit'
-    FILE_CHANGED = 'file_changed'
-    RELOAD_REQUEST = 'reload_request'
+
+    # reload immediately
+    RELOAD = 'reload'
+
+    # wait for changes before reloading
+    WAIT = 'wait'
 
 
 class Reloader(object):
@@ -118,16 +127,20 @@ class Reloader(object):
             while True:
                 result = self._run_worker()
                 if result == WorkerResult.EXIT:
+                    break
+                start = time.time()
+                if result == WorkerResult.WAIT:
                     result = self._wait_for_changes()
-                if result != WorkerResult.RELOAD_REQUEST:
-                    time.sleep(self.reload_interval)
+                dt = self.reload_interval - (time.time() - start)
+                if dt > 0:
+                    time.sleep(dt)
         sys.exit(1)
 
     def run_once(self):
         """
         Execute the worker once.
 
-        This method will return after a file change is detected.
+        This method will return after the worker exits.
 
         """
         with self._setup_runtime():
@@ -148,10 +161,7 @@ class Reloader(object):
         with self._start_control():
             with self._start_monitor():
                 with self._capture_signals():
-                    try:
-                        yield
-                    except KeyboardInterrupt:
-                        pass
+                    yield
 
     @contextmanager
     def _start_control(self):
@@ -187,6 +197,7 @@ class Reloader(object):
             proxy.stop()
 
     _signals = {
+        'SIGINT': ControlSignal.SIGINT,
         'SIGHUP': ControlSignal.SIGHUP,
         'SIGTERM': ControlSignal.SIGTERM,
         'SIGCHLD': ControlSignal.SIGCHLD,
@@ -218,7 +229,7 @@ def _run_worker(self, worker, logger=None):
         os.write(self.control_w, ControlSignal.WORKER_COMMAND)
 
     worker.start(handle_packet)
-    result = WorkerResult.EXIT
+    result = WorkerResult.WAIT
 
     try:
         # register the worker with the process group
@@ -246,13 +257,13 @@ def _run_worker(self, worker, logger=None):
                         logger.info(
                             'Broken pipe to server, triggering a reload.'
                         )
-                        result = WorkerResult.BROKEN_PIPE
+                        result = WorkerResult.RELOAD
 
                     break
 
                 logger.debug('Received worker command "{}".'.format(cmd[0]))
                 if cmd[0] == 'reload':
-                    result = WorkerResult.RELOAD_REQUEST
+                    result = WorkerResult.RELOAD
                     break
 
                 elif cmd[0] == 'watch':
@@ -275,13 +286,19 @@ def _run_worker(self, worker, logger=None):
                 logger.error('Control pipe died unexpectedly.')
                 break
 
+            elif signal == ControlSignal.SIGINT:
+                logger.info('Received SIGINT, waiting for server to exit ...')
+                result = WorkerResult.EXIT
+                break
+
             elif signal == ControlSignal.SIGHUP:
                 logger.info('Received SIGHUP, triggering a reload.')
-                result = WorkerResult.FILE_CHANGED
+                result = WorkerResult.RELOAD
                 break
 
             elif signal == ControlSignal.SIGTERM:
                 logger.info('Received SIGTERM, triggering a shutdown.')
+                result = WorkerResult.EXIT
                 break
 
             elif signal == ControlSignal.SIGCHLD:
@@ -289,20 +306,12 @@ def _run_worker(self, worker, logger=None):
                     break
 
             elif signal == ControlSignal.FILE_CHANGED:
-                result = WorkerResult.FILE_CHANGED
+                result = WorkerResult.RELOAD
                 break
 
         if worker.is_alive() and self.shutdown_interval is not None:
-            logger.info('Gracefully killing the server.')
             worker.kill(soft=True)
             worker.wait(self.shutdown_interval)
-
-    except KeyboardInterrupt:
-        if worker.is_alive():
-            logger.info('Received interrupt, waiting for server to exit ...')
-            if self.shutdown_interval is not None:
-                worker.wait(self.shutdown_interval)
-        raise
 
     finally:
         if worker.is_alive():
