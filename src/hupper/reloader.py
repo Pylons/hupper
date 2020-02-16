@@ -186,15 +186,17 @@ class Reloader(object):
             self.monitor = None
             proxy.stop()
 
+    _signals = {
+        'SIGHUP': ControlSignal.SIGHUP,
+        'SIGTERM': ControlSignal.SIGTERM,
+        'SIGCHLD': ControlSignal.SIGCHLD,
+    }
+
     @contextmanager
     def _capture_signals(self):
         wrapped_signals = []
-        for signame, control in {
-            'SIGHUP': ControlSignal.SIGHUP,
-            'SIGTERM': ControlSignal.SIGTERM,
-            'SIGCHLD': ControlSignal.SIGCHLD,
-        }.items():
-            signum = getattr(signal, signame)
+        for signame, control in self._signals.items():
+            signum = getattr(signal, signame, None)
             if signum is not None:
                 signal.signal(signum, self._control_proxy(control))
                 wrapped_signals.append(signum)
