@@ -230,6 +230,7 @@ def _run_worker(self, worker, logger=None):
 
     worker.start(handle_packet)
     result = WorkerResult.WAIT
+    soft_kill = True
 
     try:
         # register the worker with the process group
@@ -289,6 +290,14 @@ def _run_worker(self, worker, logger=None):
             elif signal == ControlSignal.SIGINT:
                 logger.info('Received SIGINT, waiting for server to exit ...')
                 result = WorkerResult.EXIT
+
+                # normally a SIGINT is sent automatically to the process
+                # group and we want to avoid forwarding both a SIGINT and a
+                # SIGTERM at the same time
+                #
+                # in the off chance that the SIGINT is not sent, we'll
+                # just terminate after waiting shutdown_interval
+                soft_kill = False
                 break
 
             elif signal == ControlSignal.SIGHUP:
@@ -299,7 +308,6 @@ def _run_worker(self, worker, logger=None):
             elif signal == ControlSignal.SIGTERM:
                 logger.info('Received SIGTERM, triggering a shutdown.')
                 result = WorkerResult.EXIT
-                worker.kill(soft=True)
                 break
 
             elif signal == ControlSignal.SIGCHLD:
@@ -310,7 +318,10 @@ def _run_worker(self, worker, logger=None):
                 result = WorkerResult.RELOAD
                 break
 
-        if worker.is_alive() and self.shutdown_interval is not None:
+        if worker.is_alive() and self.shutdown_interval:
+            if soft_kill:
+                logger.info('Gracefully killing the server.')
+                worker.kill(soft=True)
             worker.wait(self.shutdown_interval)
 
     finally:
