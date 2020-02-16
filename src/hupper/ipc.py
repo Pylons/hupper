@@ -1,5 +1,4 @@
 import io
-import importlib.util
 import os
 import struct
 import sys
@@ -249,18 +248,7 @@ def get_command_line(**kwds):
     prog %= ', '.join('%s=%r' % item for item in kwds.items())
     opts = args_from_interpreter_flags()
     args = [sys.executable] + opts + ['-c', prog]
-
-    # ensure hupper is on the PYTHONPATH in the worker process
-    self_path = os.path.abspath(importlib.util.find_spec('hupper').origin)
-    extra_py_paths = [os.path.dirname(self_path)]
-
-    env = os.environ.copy()
-    env['PYTHONPATH'] = (
-        os.pathsep.join(extra_py_paths)
-        + os.pathsep
-        + env.get('PYTHONPATH', '')
-    )
-    return args, env
+    return args
 
 
 def get_preparation_data():
@@ -295,8 +283,8 @@ def spawn(spec, kwargs, pass_fds=()):
     preparation_data = get_preparation_data()
 
     r_handle = get_handle(r)
-    args, env = get_command_line(pipe_handle=r_handle)
-    process = subprocess.Popen(args, env=env, close_fds=False)
+    args = get_command_line(pipe_handle=r_handle)
+    process = subprocess.Popen(args, close_fds=False)
 
     to_child = os.fdopen(w, 'wb')
     to_child.write(pickle.dumps([preparation_data, spec, kwargs]))
