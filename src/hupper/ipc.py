@@ -244,7 +244,25 @@ def get_command_line(**kwds):
     prog %= ', '.join('%s=%r' % item for item in kwds.items())
     opts = args_from_interpreter_flags()
     args = [sys.executable] + opts + ['-c', prog]
-    return args
+
+    # ensure hupper is on the PYTHONPATH in the worker process
+    #
+    # there are some cases where hupper may only be importable because of
+    # direct manipulation of sys.path (zc.buildout) which is not reflected
+    # into the subprocess without us doing it manually
+    # see https://github.com/Pylons/hupper/issues/25
+    hupper_root = os.path.dirname(
+        os.path.dirname(os.path.abspath(os.path.join(__file__)))
+    )
+    extra_py_paths = [hupper_root]
+
+    env = os.environ.copy()
+    env['PYTHONPATH'] = (
+        os.pathsep.join(extra_py_paths)
+        + os.pathsep
+        + env.get('PYTHONPATH', '')
+    )
+    return args, env
 
 
 def get_preparation_data():
@@ -279,8 +297,8 @@ def spawn(spec, kwargs, pass_fds=()):
     preparation_data = get_preparation_data()
 
     r_handle = get_handle(r)
-    args = get_command_line(pipe_handle=r_handle)
-    process = subprocess.Popen(args, close_fds=False)
+    args, env = get_command_line(pipe_handle=r_handle)
+    process = subprocess.Popen(args, env=env, close_fds=False)
 
     to_child = os.fdopen(w, 'wb')
     to_child.write(pickle.dumps([preparation_data, spec, kwargs]))
