@@ -3,10 +3,17 @@ import os
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-def make_proxy(monitor_factory, logger):
+class DummyCallback:
+    called = False
+
+    def __call__(self, paths):
+        self.called = paths
+
+
+def make_proxy(monitor_factory, callback, logger):
     from hupper.reloader import FileMonitorProxy
 
-    proxy = FileMonitorProxy(logger)
+    proxy = FileMonitorProxy(callback, logger)
     proxy.monitor = monitor_factory(proxy.file_changed)
     return proxy
 
@@ -28,8 +35,9 @@ def test_proxy_proxies(logger):
         def join(self):
             self.joined = True
 
+    cb = DummyCallback()
     monitor = DummyMonitor()
-    proxy = make_proxy(monitor, logger)
+    proxy = make_proxy(monitor, cb, logger)
     assert monitor.cb
     assert not monitor.started and not monitor.stopped and not monitor.joined
     proxy.start()
@@ -48,8 +56,9 @@ def test_proxy_expands_paths(tmpdir, logger):
         def add_path(self, path):
             self.paths.append(path)
 
+    cb = DummyCallback()
     monitor = DummyMonitor()
-    proxy = make_proxy(monitor, logger)
+    proxy = make_proxy(monitor, cb, logger)
     proxy.add_path('foo')
     assert monitor.paths == ['foo']
 
@@ -70,11 +79,11 @@ def test_proxy_tracks_changes(logger):
             self.cb = cb
             return self
 
+    cb = DummyCallback()
     monitor = DummyMonitor()
-    proxy = make_proxy(monitor, logger)
-    assert not proxy.is_changed()
+    proxy = make_proxy(monitor, cb, logger)
     monitor.cb('foo.txt')
-    assert proxy.is_changed()
+    assert cb.called == {'foo.txt'}
     out = logger.get_output('info')
     assert out == 'foo.txt changed; reloading ...'
     logger.reset()
@@ -82,8 +91,8 @@ def test_proxy_tracks_changes(logger):
     out = logger.get_output('info')
     assert out == ''
     logger.reset()
+    cb.called = False
     proxy.clear_changes()
-    assert not proxy.is_changed()
     monitor.cb('foo.txt')
     out = logger.get_output('info')
     assert out == 'foo.txt changed; reloading ...'
@@ -99,7 +108,8 @@ def test_ignore_files():
 
     from hupper.reloader import FileMonitorProxy
 
-    proxy = FileMonitorProxy(None, {'/a/*'})
+    cb = DummyCallback()
+    proxy = FileMonitorProxy(cb, None, {'/a/*'})
     monitor = proxy.monitor = DummyMonitor()
 
     path = 'foo.txt'
