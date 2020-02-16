@@ -1,8 +1,6 @@
 # public api
 # flake8: noqa
 
-from .utils import is_watchdog_supported
-from .utils import is_watchman_supported
-
 from .reloader import start_reloader
-from .worker import is_active, get_reloader
+from .utils import is_watchdog_supported, is_watchman_supported
+from .worker import get_reloader, is_active

@@ -7,9 +7,7 @@ import time
 import traceback
 
 from . import ipc
-from .compat import get_py_path
-from .compat import interrupt_main
-from .compat import get_site_packages
+from .compat import get_py_path, get_site_packages, interrupt_main
 from .interfaces import IReloaderProxy
 from .utils import resolve_spec
 

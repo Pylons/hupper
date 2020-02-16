@@ -1,8 +1,9 @@
 import argparse
-import hupper
 import os
 import sys
 import time
+
+import hupper
 
 here = os.path.dirname(__file__)
 

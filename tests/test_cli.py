@@ -1,5 +1,4 @@
 import argparse
-
 import pytest
 
 from hupper.cli import interval_parser

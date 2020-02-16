@@ -10,12 +10,14 @@ import time
 from .compat import glob
 from .ipc import ProcessGroup
 from .logger import DefaultLogger, SilentLogger
-from .utils import default
-from .utils import is_stream_interactive
-from .utils import is_watchdog_supported
-from .utils import is_watchman_supported
-from .utils import resolve_spec
-from .worker import Worker, is_active, get_reloader
+from .utils import (
+    default,
+    is_stream_interactive,
+    is_watchdog_supported,
+    is_watchman_supported,
+    resolve_spec,
+)
+from .worker import Worker, get_reloader, is_active
 
 
 class FileMonitorProxy(object):
@@ -239,7 +241,9 @@ def _run_worker(self, worker, logger=None):
                         time.sleep(1)
 
                     if worker.is_alive():
-                        logger.info('Broken pipe to server, triggering a reload.')
+                        logger.info(
+                            'Broken pipe to server, triggering a reload.'
+                        )
                         result = WorkerResult.BROKEN_PIPE
 
                     break

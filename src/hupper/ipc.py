@@ -1,16 +1,12 @@
 import io
 import os
 import struct
-import sys
 import subprocess
+import sys
 import threading
 
-from .compat import WIN
-from .compat import pickle
-from .compat import subprocess_wait_with_timeout
-from .utils import is_stream_interactive
-from .utils import resolve_spec
-
+from .compat import WIN, pickle, subprocess_wait_with_timeout
+from .utils import is_stream_interactive, resolve_spec
 
 if WIN:  # pragma: no cover
     import msvcrt
