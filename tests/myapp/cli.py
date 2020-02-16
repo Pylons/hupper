@@ -19,6 +19,7 @@ def parse_options(args):
     parser.add_argument('--poll', action='store_true')
     parser.add_argument('--poll-interval', type=int)
     parser.add_argument('--reload-interval', type=int)
+    parser.add_argument('--shutdown-interval', type=int)
     return parser.parse_args(args)
 
 
@@ -46,8 +47,11 @@ def main(args=None):
 
             kw['monitor_factory'] = WatchmanFileMonitor
 
-        if opts.reload_interval:
+        if opts.reload_interval is not None:
             kw['reload_interval'] = opts.reload_interval
+
+        if opts.shutdown_interval is not None:
+            kw['shutdown_interval'] = opts.shutdown_interval
 
         hupper.start_reloader(__name__ + '.main', **kw)
 
