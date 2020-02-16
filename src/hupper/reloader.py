@@ -299,6 +299,7 @@ def _run_worker(self, worker, logger=None):
             elif signal == ControlSignal.SIGTERM:
                 logger.info('Received SIGTERM, triggering a shutdown.')
                 result = WorkerResult.EXIT
+                worker.kill(soft=True)
                 break
 
             elif signal == ControlSignal.SIGCHLD:
@@ -310,7 +311,6 @@ def _run_worker(self, worker, logger=None):
                 break
 
         if worker.is_alive() and self.shutdown_interval is not None:
-            worker.kill(soft=True)
             worker.wait(self.shutdown_interval)
 
     finally:
