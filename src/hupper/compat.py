@@ -1,5 +1,4 @@
 # flake8: noqa
-import imp
 import importlib
 import site
 import subprocess
@@ -24,6 +23,8 @@ except ImportError:
 
     # fallback on python < 3.5
     else:
+        import imp
+
         get_py_path = imp.source_from_cache
 
 

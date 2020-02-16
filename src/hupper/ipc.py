@@ -1,5 +1,5 @@
 import io
-import imp
+import importlib.util
 import os
 import struct
 import sys
@@ -251,7 +251,7 @@ def get_command_line(**kwds):
     args = [sys.executable] + opts + ['-c', prog]
 
     # ensure hupper is on the PYTHONPATH in the worker process
-    self_path = os.path.abspath(imp.find_module('hupper')[1])
+    self_path = os.path.abspath(importlib.util.find_spec('hupper').origin)
     extra_py_paths = [os.path.dirname(self_path)]
 
     env = os.environ.copy()
