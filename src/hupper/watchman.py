@@ -43,7 +43,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         with self.lock:
             dirpath = os.path.dirname(path)
             if dirpath not in self.dirpaths:
-                self._schedule(dirpath)
+                self._subscribe(dirpath)
                 self.dirpaths.add(dirpath)
 
             if path not in self.paths:
@@ -74,9 +74,12 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         while self.enabled:
             try:
                 result = self._recv()
+                if 'warning' in result:
+                    self.logger.error('watchman warning=' + result['warning'])
                 if 'error' in result:
                     self.logger.error('watchman error=' + result['error'])
-                elif 'subscription' in result:
+                    continue
+                if 'subscription' in result:
                     root = result['root']
                     files = result['files']
                     with self.lock:
@@ -95,12 +98,12 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
             return self.sockpath
         return get_watchman_sockpath(self.binpath)
 
-    def _schedule(self, dirpath):
+    def _subscribe(self, dirpath):
         self._send(
             [
                 'subscribe',
                 dirpath,
-                dirpath,
+                '{}.{}.{}'.format(os.getpid(), id(self), dirpath),
                 {
                     # +1 second because we don't want any buffered changes
                     # if the daemon is already watching the folder
