@@ -205,7 +205,7 @@ class ReloaderProxy(IReloaderProxy):
 
     def watch_files(self, files):
         files = [os.path.abspath(f) for f in files]
-        self.pipe.send(('watch', files))
+        self.pipe.send(('watch_files', files))
 
     def trigger_reload(self):
         self.pipe.send(('reload',))

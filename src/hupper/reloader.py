@@ -5,6 +5,7 @@ import os
 import re
 import signal
 import sys
+import threading
 import time
 
 from .compat import glob
@@ -37,6 +38,8 @@ class FileMonitorProxy(object):
         self.ignore_files = [
             re.compile(fnmatch.translate(x)) for x in set(ignore_files or [])
         ]
+        self.lock = threading.Lock()
+        self.is_changed = False
 
     def add_path(self, path):
         # if the glob does not match any files then go ahead and pass
@@ -54,13 +57,19 @@ class FileMonitorProxy(object):
         self.monitor.join()
 
     def file_changed(self, path):
-        if path not in self.changed_paths:
-            self.changed_paths.add(path)
-            self.logger.info('%s changed; reloading ...' % (path,))
-        self.callback(self.changed_paths)
+        with self.lock:
+            if path not in self.changed_paths:
+                self.logger.info('{} changed; reloading ...'.format(path))
+                self.changed_paths.add(path)
+
+                if not self.is_changed:
+                    self.callback(self.changed_paths)
+                    self.is_changed = True
 
     def clear_changes(self):
-        self.changed_paths = set()
+        with self.lock:
+            self.changed_paths = set()
+            self.is_changed = False
 
 
 class ControlSignal:
@@ -228,18 +237,20 @@ def _run_worker(self, worker, logger=None):
         packets.append(packet)
         os.write(self.control_w, ControlSignal.WORKER_COMMAND)
 
+    self.monitor.clear_changes()
+
     worker.start(handle_packet)
     result = WorkerResult.WAIT
     soft_kill = True
 
+    logger.info('Starting monitor for PID %s.' % worker.pid)
     try:
         # register the worker with the process group
         self.process_group.add_child(worker.pid)
 
-        logger.info('Starting monitor for PID %s.' % worker.pid)
-        self.monitor.clear_changes()
-
         while True:
+            # process all packets before moving on to signals to avoid
+            # missing any files that need to be watched
             if packets:
                 cmd = packets.popleft()
 
@@ -267,7 +278,7 @@ def _run_worker(self, worker, logger=None):
                     result = WorkerResult.RELOAD
                     break
 
-                elif cmd[0] == 'watch':
+                elif cmd[0] == 'watch_files':
                     for path in cmd[1]:
                         self.monitor.add_path(path)
 
@@ -315,8 +326,9 @@ def _run_worker(self, worker, logger=None):
                     break
 
             elif signal == ControlSignal.FILE_CHANGED:
-                result = WorkerResult.RELOAD
-                break
+                if self.monitor.is_changed:
+                    result = WorkerResult.RELOAD
+                    break
 
         if worker.is_alive() and self.shutdown_interval:
             if soft_kill:
