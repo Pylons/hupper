@@ -66,8 +66,8 @@ class FileMonitorProxy(object):
                 self.changed_paths.add(path)
 
                 if not self.is_changed:
-                    self.callback(self.changed_paths)
                     self.is_changed = True
+                    self.callback(self.changed_paths)
 
     def clear_changes(self):
         with self.lock:
