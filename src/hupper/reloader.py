@@ -307,6 +307,7 @@ def _run_worker(self, worker, logger=None):
 
             if not signal:
                 logger.error('Control pipe died unexpectedly.')
+                result = WorkerResult.EXIT
                 break
 
             elif signal == ControlSignal.SIGINT:
