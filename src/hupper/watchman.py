@@ -108,7 +108,14 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
                     # +1 second because we don't want any buffered changes
                     # if the daemon is already watching the folder
                     'since': int(time.time() + 1),
-                    'expression': ['type', 'f'],
+                    'expression': [
+                        'allof',
+                        ['type', 'f'],
+                        # watchman monitors entire subdirectories with
+                        # a single subscription but we want to only
+                        # watch the specific folder's immediate files
+                        ['dirname', "", ["depth", "eq", 0]],
+                    ],
                     'fields': ['name'],
                 },
             ]

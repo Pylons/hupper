@@ -1,3 +1,8 @@
+unreleased
+==========
+
+- Performance improvements when using Watchman.
+
 1.10 (2020-02-18)
 =================
 
