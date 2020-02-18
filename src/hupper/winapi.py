@@ -1,5 +1,5 @@
 import ctypes
-from ctypes import wintypes
+from ctypes import WINFUNCTYPE, wintypes
 
 kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 
@@ -13,6 +13,7 @@ HANDLE = wintypes.HANDLE
 LARGE_INTEGER = wintypes.LARGE_INTEGER
 SIZE_T = ULONG_PTR
 ULONGLONG = ctypes.c_uint64
+PHANDLER_ROUTINE = WINFUNCTYPE(BOOL, DWORD)
 
 JobObjectAssociateCompletionPortInformation = 7
 JobObjectBasicLimitInformation = 2
@@ -174,3 +175,30 @@ def AssignProcessToJobObject(hJob, hProcess):
 def SetHandleInformation(h, dwMask, dwFlags):
     ret = kernel32.SetHandleInformation(h, dwMask, dwFlags)
     CheckError(ret, 'failed to set handle information')
+
+
+CTRL_C_EVENT = 0
+CTRL_BREAK_EVENT = 1
+CTRL_CLOSE_EVENT = 2
+CTRL_LOGOFF_EVENT = 5
+CTRL_SHUTDOWN_EVENT = 6
+
+
+def SetConsoleCtrlHandler(handler):
+    @PHANDLER_ROUTINE
+    def console_handler(ctrl_type):
+        if ctrl_type in (
+            CTRL_C_EVENT,
+            CTRL_BREAK_EVENT,
+            CTRL_CLOSE_EVENT,
+            CTRL_LOGOFF_EVENT,
+            CTRL_SHUTDOWN_EVENT,
+        ):
+            handler()
+
+    SetConsoleCtrlHandler = kernel32.SetConsoleCtrlHandler
+    SetConsoleCtrlHandler.argtypes = (PHANDLER_ROUTINE, BOOL)
+    SetConsoleCtrlHandler.restype = BOOL
+
+    if not SetConsoleCtrlHandler(console_handler, True):
+        raise RuntimeError('SetConsoleCtrlHandler failed.')

@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-from .compat import glob
+from .compat import glob, WIN
 from .ipc import ProcessGroup
 from .logger import DefaultLogger, SilentLogger
 from .utils import (
@@ -19,6 +19,9 @@ from .utils import (
     resolve_spec,
 )
 from .worker import Worker, get_reloader, is_active
+
+if WIN:
+    from .winapi import SetConsoleCtrlHandler
 
 
 class FileMonitorProxy(object):
@@ -218,7 +221,11 @@ class Reloader(object):
         for signame, control in self._signals.items():
             signum = getattr(signal, signame, None)
             if signum is not None:
-                signal.signal(signum, self._control_proxy(control))
+                if WIN and signame == 'SIGINT':
+                    SetConsoleCtrlHandler(self._control_proxy(control))
+                    signal.signal(signum, signal.SIG_IGN)
+                else:
+                    signal.signal(signum, self._control_proxy(control))
                 wrapped_signals.append(signum)
         try:
             yield
