@@ -61,7 +61,7 @@ class TestApp(threading.Thread):
 
     def stop(self):
         if self.is_alive():
-            self.process.terminate()
+            self.process.kill()
         self.join()
 
         if self.tmpfile:

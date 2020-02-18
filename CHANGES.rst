@@ -1,3 +1,23 @@
+unreleased
+==========
+
+- Handle a ``SIGTERM`` signal by forwarding it to the child process and
+  gracefully waiting for it to exit. This should enable using ``hupper``
+  from within docker containers and other systems that want to control
+  the reloader process.
+
+  Previously the ``SIGTERM`` would shutdown ``hupper`` immediately, stranding
+  the worker and relying on it to shutdown on its own.
+
+  See https://github.com/Pylons/hupper/pull/65
+
+- Avoid acquiring locks in the reloader process's signal handlers.
+  See https://github.com/Pylons/hupper/pull/65
+
+- Fix deprecation warnings caused by using the ``imp`` module on newer
+  versions of Python.
+  See https://github.com/Pylons/hupper/pull/65
+
 1.9.1 (2019-11-12)
 ==================
 

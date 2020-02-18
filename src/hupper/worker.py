@@ -7,9 +7,7 @@ import time
 import traceback
 
 from . import ipc
-from .compat import get_py_path
-from .compat import interrupt_main
-from .compat import get_site_packages
+from .compat import get_py_path, get_site_packages, interrupt_main
 from .interfaces import IReloaderProxy
 from .utils import resolve_spec
 
@@ -111,23 +109,6 @@ def iter_module_paths(modules=None):
                 yield abs_filename
 
 
-class WatchForParentShutdown(threading.Thread):
-    """ Watch the pipe to ensure the parent is still alive."""
-
-    def __init__(self, pipe):
-        super(WatchForParentShutdown, self).__init__()
-        self.pipe = pipe
-
-    def run(self):
-        try:
-            # wait until the pipe breaks
-            while self.pipe.recv():  # pragma: no cover
-                pass
-        except EOFError:
-            pass
-        interrupt_main()
-
-
 class Worker(object):
     """ A helper object for managing a worker process lifecycle. """
 
@@ -142,7 +123,7 @@ class Worker(object):
         self.exitcode = None
         self.stdin_termios = None
 
-    def start(self):
+    def start(self, on_packet=None):
         self.stdin_termios = ipc.snapshot_termios(sys.stdin)
 
         kw = dict(
@@ -159,7 +140,7 @@ class Worker(object):
         self.pid = self.process.pid
 
         # activate the pipe after forking
-        self.pipe.activate()
+        self.pipe.activate(on_packet)
 
         # kill the child side of the pipe after forking as the child is now
         # responsible for it
@@ -224,10 +205,18 @@ class ReloaderProxy(IReloaderProxy):
 
     def watch_files(self, files):
         files = [os.path.abspath(f) for f in files]
-        self.pipe.send(('watch', files))
+        self.pipe.send(('watch_files', files))
 
     def trigger_reload(self):
         self.pipe.send(('reload',))
+
+
+def watch_control_pipe(pipe):
+    def handle_packet(packet):
+        if packet is None:
+            interrupt_main()
+
+    pipe.activate(handle_packet)
 
 
 def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
@@ -237,7 +226,7 @@ def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
         spec_kwargs = {}
 
     # activate the pipe after forking
-    pipe.activate()
+    watch_control_pipe(pipe)
 
     # SIGHUP is not supported on windows
     if hasattr(signal, 'SIGHUP'):
@@ -249,10 +238,6 @@ def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
 
     global _reloader_proxy
     _reloader_proxy = ReloaderProxy(pipe)
-
-    parent_watcher = WatchForParentShutdown(pipe)
-    parent_watcher.daemon = True
-    parent_watcher.start()
 
     poller = WatchSysModules(_reloader_proxy.watch_files)
     poller.daemon = True

@@ -1,10 +1,9 @@
 # check ``hupper.utils.is_watchdog_supported`` before using this module
 from __future__ import absolute_import
-
 import os.path
 import threading
-from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from .interfaces import IFileMonitor
 

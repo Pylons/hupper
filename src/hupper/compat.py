@@ -1,5 +1,4 @@
 # flake8: noqa
-import imp
 import importlib
 import site
 import subprocess
@@ -9,10 +8,6 @@ import time
 PY2 = sys.version_info[0] == 2
 WIN = sys.platform == 'win32'
 
-try:
-    import queue
-except ImportError:
-    import Queue as queue
 
 try:
     from _thread import interrupt_main
@@ -28,6 +23,8 @@ except ImportError:
 
     # fallback on python < 3.5
     else:
+        import imp
+
         get_py_path = imp.source_from_cache
 
 

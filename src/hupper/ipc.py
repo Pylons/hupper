@@ -1,18 +1,12 @@
 import io
-import imp
 import os
 import struct
-import sys
 import subprocess
+import sys
 import threading
 
-from .compat import WIN
-from .compat import pickle
-from .compat import queue
-from .compat import subprocess_wait_with_timeout
-from .utils import is_stream_interactive
-from .utils import resolve_spec
-
+from .compat import WIN, pickle, subprocess_wait_with_timeout
+from .utils import is_stream_interactive, resolve_spec
 
 if WIN:  # pragma: no cover
     import msvcrt
@@ -131,9 +125,10 @@ class Connection(object):
         self.r_fd = open_handle(state['r_handle'], 'rb')
         self.w_fd = open_handle(state['w_handle'], 'wb')
 
-    def activate(self):
+    def activate(self, on_recv):
+        self.on_recv = on_recv
+
         self.send_lock = threading.Lock()
-        self.reader_queue = queue.Queue()
 
         self.reader_thread = threading.Thread(target=self._read_loop)
         self.reader_thread.daemon = True
@@ -142,6 +137,7 @@ class Connection(object):
     def close(self):
         close_fd(self.r_fd)
         close_fd(self.w_fd)
+        self.on_recv = None
 
     def _recv_packet(self):
         buf = io.BytesIO()
@@ -167,10 +163,10 @@ class Connection(object):
                 packet = self._recv_packet()
                 if packet is None:
                     break
-                self.reader_queue.put(packet)
+                self.on_recv(packet)
         except EOFError:
             pass
-        self.reader_queue.put(None)
+        self.on_recv(None)
 
     def _write_packet(self, data):
         while data:
@@ -183,10 +179,6 @@ class Connection(object):
             self._write_packet(self._packet_len.pack(len(data)))
             self._write_packet(data)
         return len(data) + self._packet_len.size
-
-    def recv(self, timeout=None):
-        packet = self.reader_queue.get(block=True, timeout=timeout)
-        return packet
 
 
 def set_inheritable(fd, inheritable):
@@ -254,8 +246,15 @@ def get_command_line(**kwds):
     args = [sys.executable] + opts + ['-c', prog]
 
     # ensure hupper is on the PYTHONPATH in the worker process
-    self_path = os.path.abspath(imp.find_module('hupper')[1])
-    extra_py_paths = [os.path.dirname(self_path)]
+    #
+    # there are some cases where hupper may only be importable because of
+    # direct manipulation of sys.path (zc.buildout) which is not reflected
+    # into the subprocess without us doing it manually
+    # see https://github.com/Pylons/hupper/issues/25
+    hupper_root = os.path.dirname(
+        os.path.dirname(os.path.abspath(os.path.join(__file__)))
+    )
+    extra_py_paths = [hupper_root]
 
     env = os.environ.copy()
     env['PYTHONPATH'] = (
