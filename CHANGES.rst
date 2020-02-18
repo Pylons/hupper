@@ -1,5 +1,5 @@
-unreleased
-==========
+1.10 (2020-02-18)
+=================
 
 - Handle a ``SIGTERM`` signal by forwarding it to the child process and
   gracefully waiting for it to exit. This should enable using ``hupper``
