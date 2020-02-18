@@ -5,8 +5,14 @@ hupper
 .. image:: https://img.shields.io/pypi/v/hupper.svg
     :target: https://pypi.python.org/pypi/hupper
 
-.. image:: https://img.shields.io/travis/Pylons/hupper/master.svg
-    :target: https://travis-ci.org/Pylons/hupper
+.. image:: https://github.com/Pylons/hupper/workflows/ci-linux/badge.svg
+    :target: https://github.com/Pylons/hupper/actions?query=workflow%3A%22Build%2Ftest+on+Linux%22
+
+.. image:: https://github.com/Pylons/hupper/workflows/Build/test%20on%20MacOS/badge.svg
+    :target: https://github.com/Pylons/hupper/actions?query=workflow%3A%22Build%2Ftest+on+MacOS%22
+
+.. image:: https://github.com/Pylons/hupper/workflows/ci-windows/badge.svg
+    :target: https://github.com/Pylons/hupper/actions?query=workflow%3A%22Build%2Ftest+on+Windows%22
 
 .. image:: https://readthedocs.org/projects/hupper/badge/?version=latest
     :target: https://readthedocs.org/projects/hupper/?badge=latest
