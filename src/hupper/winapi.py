@@ -184,7 +184,16 @@ CTRL_LOGOFF_EVENT = 5
 CTRL_SHUTDOWN_EVENT = 6
 
 
-def SetConsoleCtrlHandler(handler):
+def SetConsoleCtrlHandler(handler, add):
+    SetConsoleCtrlHandler = kernel32.SetConsoleCtrlHandler
+    SetConsoleCtrlHandler.argtypes = (PHANDLER_ROUTINE, BOOL)
+    SetConsoleCtrlHandler.restype = BOOL
+
+    ret = SetConsoleCtrlHandler(handler, True)
+    CheckError(ret, 'failed in to set console ctrl handler')
+
+
+def AddConsoleCtrlHandler(handler):
     @PHANDLER_ROUTINE
     def console_handler(ctrl_type):
         if ctrl_type in (
@@ -196,9 +205,5 @@ def SetConsoleCtrlHandler(handler):
         ):
             handler()
 
-    SetConsoleCtrlHandler = kernel32.SetConsoleCtrlHandler
-    SetConsoleCtrlHandler.argtypes = (PHANDLER_ROUTINE, BOOL)
-    SetConsoleCtrlHandler.restype = BOOL
-
-    if not SetConsoleCtrlHandler(console_handler, True):
-        raise RuntimeError('SetConsoleCtrlHandler failed.')
+    SetConsoleCtrlHandler(console_handler, True)
+    return lambda: SetConsoleCtrlHandler(console_handler, False)

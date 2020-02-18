@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-from .compat import glob, WIN
+from .compat import WIN, glob
 from .ipc import ProcessGroup
 from .logger import DefaultLogger, SilentLogger
 from .utils import (
@@ -21,7 +21,7 @@ from .utils import (
 from .worker import Worker, get_reloader, is_active
 
 if WIN:
-    from .winapi import SetConsoleCtrlHandler
+    from . import winapi
 
 
 class FileMonitorProxy(object):
@@ -217,21 +217,22 @@ class Reloader(object):
 
     @contextmanager
     def _capture_signals(self):
-        wrapped_signals = []
-        for signame, control in self._signals.items():
-            signum = getattr(signal, signame, None)
-            if signum is not None:
-                if WIN and signame == 'SIGINT':
-                    SetConsoleCtrlHandler(self._control_proxy(control))
-                    signal.signal(signum, signal.SIG_IGN)
-                else:
-                    signal.signal(signum, self._control_proxy(control))
-                wrapped_signals.append(signum)
+        undo_handlers = []
         try:
+            for signame, control in self._signals.items():
+                signum = getattr(signal, signame, None)
+                if signum is not None:
+                    handler = self._control_proxy(control)
+                    if WIN and signame == 'SIGINT':
+                        undo = winapi.AddConsoleCtrlHandler(handler)
+                        undo_handlers.append(undo)
+                        handler = signal.SIG_IGN
+                    psig = signal.signal(signum, handler)
+                    undo_handlers.append(lambda: signal.signal(signum, psig))
             yield
         finally:
-            for signum in wrapped_signals:
-                signal.signal(signum, signal.SIG_DFL)
+            for undo in reversed(undo_handlers):
+                undo()
 
 
 def _run_worker(self, worker, logger=None):
