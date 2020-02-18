@@ -221,14 +221,17 @@ class Reloader(object):
         try:
             for signame, control in self._signals.items():
                 signum = getattr(signal, signame, None)
-                if signum is not None:
-                    handler = self._control_proxy(control)
-                    if WIN and signame == 'SIGINT':
-                        undo = winapi.AddConsoleCtrlHandler(handler)
-                        undo_handlers.append(undo)
-                        handler = signal.SIG_IGN
-                    psig = signal.signal(signum, handler)
-                    undo_handlers.append(lambda: signal.signal(signum, psig))
+                if signum is None:
+                    continue
+                handler = self._control_proxy(control)
+                if WIN and signame == 'SIGINT':
+                    undo = winapi.AddConsoleCtrlHandler(handler)
+                    undo_handlers.append(undo)
+                    handler = signal.SIG_IGN
+                psig = signal.signal(signum, handler)
+                undo_handlers.append(
+                    lambda s=signum, p=psig: signal.signal(s, p)
+                )
             yield
         finally:
             for undo in reversed(undo_handlers):

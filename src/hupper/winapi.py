@@ -189,7 +189,7 @@ def SetConsoleCtrlHandler(handler, add):
     SetConsoleCtrlHandler.argtypes = (PHANDLER_ROUTINE, BOOL)
     SetConsoleCtrlHandler.restype = BOOL
 
-    ret = SetConsoleCtrlHandler(handler, True)
+    ret = SetConsoleCtrlHandler(handler, add)
     CheckError(ret, 'failed in to set console ctrl handler')
 
 
@@ -204,6 +204,8 @@ def AddConsoleCtrlHandler(handler):
             CTRL_SHUTDOWN_EVENT,
         ):
             handler()
+            return True
+        return False
 
     SetConsoleCtrlHandler(console_handler, True)
     return lambda: SetConsoleCtrlHandler(console_handler, False)
