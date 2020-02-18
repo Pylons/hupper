@@ -1,5 +1,5 @@
-unreleased
-==========
+1.10.1 (2020-02-18)
+===================
 
 - Performance improvements when using Watchman.
 
