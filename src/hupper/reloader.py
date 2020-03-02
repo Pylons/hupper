@@ -138,11 +138,11 @@ class Reloader(object):
         with self._setup_runtime():
             while True:
                 result = self._run_worker()
-                if result == WorkerResult.EXIT:
-                    break
                 start = time.time()
                 if result == WorkerResult.WAIT:
                     result = self._wait_for_changes()
+                if result == WorkerResult.EXIT:
+                    break
                 dt = self.reload_interval - (time.time() - start)
                 if dt > 0:
                     time.sleep(dt)
@@ -166,7 +166,12 @@ class Reloader(object):
 
     def _wait_for_changes(self):
         worker = Worker(__name__ + '.wait_main')
-        return _run_worker(self, worker, logger=SilentLogger())
+        return _run_worker(
+            self,
+            worker,
+            logger=SilentLogger(),
+            shutdown_interval=0,
+        )
 
     @contextmanager
     def _setup_runtime(self):
@@ -222,6 +227,9 @@ class Reloader(object):
             for signame, control in self._signals.items():
                 signum = getattr(signal, signame, None)
                 if signum is None:
+                    self.logger.debug(
+                        'skipping unsupported signal={}'.format(signame)
+                    )
                     continue
                 handler = self._control_proxy(control)
                 if WIN and signame == 'SIGINT':
@@ -238,9 +246,12 @@ class Reloader(object):
                 undo()
 
 
-def _run_worker(self, worker, logger=None):
+def _run_worker(self, worker, logger=None, shutdown_interval=None):
     if logger is None:
         logger = self.logger
+
+    if shutdown_interval is None:
+        shutdown_interval = self.shutdown_interval
 
     packets = deque()
 
@@ -266,7 +277,7 @@ def _run_worker(self, worker, logger=None):
                 cmd = packets.popleft()
 
                 if cmd is None:
-                    if worker.is_alive():
+                    if worker.is_alive:
                         # the worker socket has died but the process is still
                         # alive (somehow) so wait a brief period to see if it
                         # dies on its own - if it does die then we want to
@@ -276,13 +287,15 @@ def _run_worker(self, worker, logger=None):
                         # didn't die due to some file changes
                         time.sleep(1)
 
-                    if worker.is_alive():
+                    if worker.is_alive:
                         logger.info(
-                            'Broken pipe to server, triggering a reload.'
+                            'Worker pipe died unexpectedly, triggering a reload.'
                         )
                         result = WorkerResult.RELOAD
+                        break
 
-                    break
+                    os.write(self.control_w, ControlSignal.SIGCHLD)
+                    continue
 
                 logger.debug('Received worker command "{}".'.format(cmd[0]))
                 if cmd[0] == 'reload':
@@ -299,9 +312,6 @@ def _run_worker(self, worker, logger=None):
                 # done handling the packet, continue to the next one
                 # do not fall through here because it will block
                 continue
-
-            if not worker.is_alive():
-                break
 
             signal = os.read(self.control_r, 1)
 
@@ -333,23 +343,23 @@ def _run_worker(self, worker, logger=None):
                 result = WorkerResult.EXIT
                 break
 
-            elif signal == ControlSignal.SIGCHLD:
-                if not worker.is_alive():
-                    break
-
             elif signal == ControlSignal.FILE_CHANGED:
                 if self.monitor.is_changed:
                     result = WorkerResult.RELOAD
                     break
 
-        if worker.is_alive() and self.shutdown_interval:
+            elif signal == ControlSignal.SIGCHLD:
+                if not worker.is_alive:
+                    break
+
+        if worker.is_alive and shutdown_interval:
             if soft_kill:
                 logger.info('Gracefully killing the server.')
                 worker.kill(soft=True)
-            worker.wait(self.shutdown_interval)
+            worker.wait(shutdown_interval)
 
     finally:
-        if worker.is_alive():
+        if worker.is_alive:
             logger.info('Server did not exit, forcefully killing.')
             worker.kill()
             worker.join()

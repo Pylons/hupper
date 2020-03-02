@@ -146,6 +146,7 @@ class Worker(object):
         # responsible for it
         self._child_pipe.close()
 
+    @property
     def is_alive(self):
         if self.exitcode is not None:
             return False
