@@ -1,3 +1,9 @@
+1.10.2 (2020-03-02)
+===================
+
+- Fix a regression that caused SIGINT to not work properly in some situations.
+  See https://github.com/Pylons/hupper/pull/67
+
 1.10.1 (2020-02-18)
 ===================
 
