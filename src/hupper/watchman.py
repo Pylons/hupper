@@ -82,10 +82,10 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
                 continue
 
             if 'warning' in result:
-                self.logger.error('watchman warning=' + result['warning'])
+                self.logger.error('watchman warning: ' + result['warning'])
 
             if 'error' in result:
-                self.logger.error('watchman error=' + result['error'])
+                self.logger.error('watchman error: ' + result['error'])
 
             if 'subscription' in result:
                 root = result['root']
@@ -119,11 +119,10 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         return get_watchman_sockpath(self.binpath)
 
     def _watch(self, root):
-        self.logger.debug('Watchman subscribing to path={}'.format(root))
         result = self._query(['watch-project', root])
         if result['watch'] != root:
             root = result['watch']
-            self.logger.debug('Watchman found project root={}'.format(root))
+        self.logger.debug('Watchman is tracking root: ' + root)
         self._query(
             [
                 'subscribe',
