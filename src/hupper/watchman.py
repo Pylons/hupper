@@ -1,6 +1,7 @@
 # check ``hupper.utils.is_watchman_supported`` before using this module
 import json
 import os
+import queue
 import socket
 import threading
 import time
@@ -38,6 +39,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         self.sockpath = sockpath
         self.binpath = binpath
         self.timeout = timeout
+        self.responses = queue.Queue()
 
     def add_path(self, path):
         with self.lock:
@@ -60,7 +62,6 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         self._send(['version'])
         result = self._recv()
         self.logger.debug('Connected to watchman v' + result['version'] + '.')
-
         super(WatchmanFileMonitor, self).start()
 
     def join(self):
@@ -74,21 +75,37 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         while self.enabled:
             try:
                 result = self._recv()
-                if 'warning' in result:
-                    self.logger.error('watchman warning=' + result['warning'])
-                if 'error' in result:
-                    self.logger.error('watchman error=' + result['error'])
-                    continue
-                if 'subscription' in result:
-                    root = result['root']
-                    files = result['files']
-                    with self.lock:
-                        for f in files:
-                            path = os.path.join(root, f)
-                            if path in self.paths:
-                                self.callback(path)
             except socket.timeout:
-                pass
+                continue
+
+            if 'warning' in result:
+                self.logger.error('watchman warning=' + result['warning'])
+
+            if 'error' in result:
+                self.logger.error('watchman error=' + result['error'])
+
+            if 'subscription' in result:
+                root = result['root']
+                files = result['files']
+                with self.lock:
+                    for f in files:
+                        if isinstance(f, dict):
+                            f = f['name']
+                        path = os.path.join(root, f)
+                        if path in self.paths:
+                            self.callback(path)
+
+            if not self._is_unilateral(result):
+                self.responses.put(result)
+
+    def _is_unilateral(self, result):
+        if 'unilateral' in result and result['unilateral']:
+            return True
+        # fallback to checking for known unilateral responses
+        for k in ['log', 'subscription']:
+            if k in result:
+                return True
+        return False
 
     def stop(self):
         self.enabled = False
@@ -99,7 +116,8 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         return get_watchman_sockpath(self.binpath)
 
     def _subscribe(self, dirpath):
-        self._send(
+        self._query(['watch', dirpath])
+        self._query(
             [
                 'subscribe',
                 dirpath,
@@ -154,3 +172,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         if not PY2:
             cmd = cmd.encode('ascii')
         self._sock.sendall(cmd + b'\n')
+
+    def _query(self, msg, timeout=None):
+        self._send(msg)
+        return self.responses.get(timeout=timeout)
