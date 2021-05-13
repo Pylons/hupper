@@ -119,11 +119,11 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         return get_watchman_sockpath(self.binpath)
 
     def _watch(self, root):
-        self.logger.debug(f'Watchman subscribing to path={root}')
+        self.logger.debug('Watchman subscribing to path={}'.format(root))
         result = self._query(['watch-project', root])
         if result['watch'] != root:
             root = result['watch']
-            self.logger.debug(f'Watchman found project root={root}')
+            self.logger.debug('Watchman found project root={}'.format(root))
         self._query(
             [
                 'subscribe',
