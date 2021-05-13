@@ -16,16 +16,25 @@ except ImportError:
 
 
 try:
-    from importlib.util import source_from_cache as get_py_path
+    from importlib.util import source_from_cache as _source_from_cache
 except ImportError:
-    if PY2:
-        get_py_path = lambda path: path[:-1]
+    try:
+        # fallback on python < 3.5
+        from imp import source_from_cache as _source_from_cache
+    except ImportError:
+        # fallback on python 2.x
+        _source_from_cache = None
 
-    # fallback on python < 3.5
-    else:
-        import imp
 
-        get_py_path = imp.source_from_cache
+def get_py_path(path):
+    if _source_from_cache:
+        try:
+            return _source_from_cache(path)
+        except ValueError:
+            # fallback for solitary *.pyc files outside of __pycache__
+            pass
+
+    return path[:-1]
 
 
 try:
