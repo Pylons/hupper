@@ -368,7 +368,6 @@ def _run_worker(self, worker, logger=None, shutdown_interval=None):
             worker.join()
         logger.debug('Server exited with code %d.' % worker.exitcode)
 
-    self.monitor.clear_changes()
     return result
 
 
