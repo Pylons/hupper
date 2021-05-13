@@ -32,8 +32,8 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         super(WatchmanFileMonitor, self).__init__()
         self.callback = callback
         self.logger = logger
+        self.watches = set()
         self.paths = set()
-        self.dirpaths = set()
         self.lock = threading.Lock()
         self.enabled = True
         self.sockpath = sockpath
@@ -43,10 +43,12 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
 
     def add_path(self, path):
         with self.lock:
-            dirpath = os.path.dirname(path)
-            if dirpath not in self.dirpaths:
-                self._subscribe(dirpath)
-                self.dirpaths.add(dirpath)
+            root = os.path.dirname(path)
+            for watch in self.watches:
+                if watch == root or root.startswith(watch + os.sep):
+                    break
+            else:
+                self._watch(root)
 
             if path not in self.paths:
                 self.paths.add(path)
@@ -62,6 +64,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         self._send(['version'])
         result = self._recv()
         self.logger.debug('Connected to watchman v' + result['version'] + '.')
+
         super(WatchmanFileMonitor, self).start()
 
     def join(self):
@@ -115,29 +118,27 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
             return self.sockpath
         return get_watchman_sockpath(self.binpath)
 
-    def _subscribe(self, dirpath):
-        self._query(['watch', dirpath])
+    def _watch(self, root):
+        self.logger.debug(f'Watchman subscribing to path={root}')
+        result = self._query(['watch-project', root])
+        if result['watch'] != root:
+            root = result['watch']
+            self.logger.debug(f'Watchman found project root={root}')
         self._query(
             [
                 'subscribe',
-                dirpath,
-                '{}.{}.{}'.format(os.getpid(), id(self), dirpath),
+                root,
+                '{}.{}.{}'.format(os.getpid(), id(self), root),
                 {
                     # +1 second because we don't want any buffered changes
                     # if the daemon is already watching the folder
                     'since': int(time.time() + 1),
-                    'expression': [
-                        'allof',
-                        ['type', 'f'],
-                        # watchman monitors entire subdirectories with
-                        # a single subscription but we want to only
-                        # watch the specific folder's immediate files
-                        ['dirname', "", ["depth", "eq", 0]],
-                    ],
+                    'expression': ['type', 'f'],
                     'fields': ['name'],
                 },
             ]
         )
+        self.watches.add(root)
 
     def _readline(self):
         # buffer may already have a line
@@ -164,7 +165,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         try:
             return json.loads(line)
         except Exception:  # pragma: no cover
-            self.logger.info('ignoring corrupted payload from watchman')
+            self.logger.info('Ignoring corrupted payload from watchman.')
             return {}
 
     def _send(self, msg):
