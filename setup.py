@@ -15,7 +15,7 @@ tests_require = ['watchdog', 'pytest', 'pytest-cov', 'mock']
 
 setup(
     name='hupper',
-    version='1.10.2',
+    version='1.10.3',
     description=(
         'Integrated process monitor for developing and reloading daemons.'
     ),
@@ -40,10 +40,11 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],

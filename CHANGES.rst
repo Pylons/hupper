@@ -1,3 +1,18 @@
+1.10.3 (2021-05-13)
+===================
+
+- Support Python 3.8 and 3.9.
+
+- Fix an issue with bare ``.pyc`` files in the source folder causing unhandled
+  exceptions.
+  See https://github.com/Pylons/hupper/pull/69
+
+- Fix issues with using the Watchman file monitor on versions newer than
+  Watchman 4.9.0. This fix modifies ``hupper`` to use Watchman's
+  ``watch-project`` capabilities which also support reading the
+  ``.watchmanconfig`` file to control certain properties of the monitoring.
+  See https://github.com/Pylons/hupper/pull/70
+
 1.10.2 (2020-03-02)
 ===================
 
