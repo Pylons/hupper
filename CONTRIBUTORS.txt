@@ -110,3 +110,4 @@ Contributors
 - Jens Carl (2017-05-22)
 - Eric Atkin (2019-02-15)
 - Yeray Díaz Díaz (2019-10-03)
+- Jonathan Vanasco (2022-11-15)

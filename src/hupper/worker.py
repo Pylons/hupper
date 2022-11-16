@@ -259,7 +259,7 @@ def worker_main(spec, pipe, spec_args=None, spec_kwargs=None):
         raise
     finally:
         try:
-            # attempt to send imported paths to the master prior to closing
+            # attempt to send imported paths to the main prior to closing
             poller.update_paths()
             poller.stop()
             poller.join()

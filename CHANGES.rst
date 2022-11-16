@@ -1,3 +1,8 @@
+Unreleased
+==========
+
+- rename "master" branch to "main"
+
 1.10.3 (2021-05-13)
 ===================
 
