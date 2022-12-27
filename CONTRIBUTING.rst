@@ -102,9 +102,10 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 2.7, 3.4 and 3.5, and for PyPy. Check
-   https://travis-ci.org/Pylons/hupper/pull_requests
-   and make sure that the tests pass for all supported Python versions.
+3. The pull request should work for Python 2.7, and 3.7 and up and for PyPy 3.8.
+4. When your pull request is posted, a maintainer will click the button to run
+   Github Actions, afterwards validate that your PR is valid for all tested
+   platforms/Python versions
 
 Tips
 ----
