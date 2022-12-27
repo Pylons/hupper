@@ -49,7 +49,6 @@ if PY2 or sys.version_info[1] < 5:
     def glob(pathname, recursive=False):
         return gg(pathname)
 
-
 else:
     from glob import glob
 
@@ -95,7 +94,6 @@ if PY2:
                 dt = 0.5
             time.sleep(dt)
         return process.poll()
-
 
 else:
 

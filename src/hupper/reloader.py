@@ -289,7 +289,8 @@ def _run_worker(self, worker, logger=None, shutdown_interval=None):
 
                     if worker.is_alive:
                         logger.info(
-                            'Worker pipe died unexpectedly, triggering a reload.'
+                            'Worker pipe died unexpectedly, triggering a '
+                            'reload.'
                         )
                         result = WorkerResult.RELOAD
                         break

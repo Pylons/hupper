@@ -13,7 +13,7 @@ from .utils import resolve_spec
 
 
 class WatchSysModules(threading.Thread):
-    """ Poll ``sys.modules`` for imported modules."""
+    """Poll ``sys.modules`` for imported modules."""
 
     poll_interval = 1
     ignore_system_paths = True
@@ -35,7 +35,7 @@ class WatchSysModules(threading.Thread):
         self.stopped = True
 
     def update_paths(self):
-        """ Check sys.modules for paths to add to our path set."""
+        """Check sys.modules for paths to add to our path set."""
         new_paths = []
         with self.lock:
             for path in expand_source_paths(iter_module_paths()):
@@ -46,7 +46,7 @@ class WatchSysModules(threading.Thread):
             self.watch_paths(new_paths)
 
     def search_traceback(self, tb):
-        """ Inspect a traceback for new paths to add to our path set."""
+        """Inspect a traceback for new paths to add to our path set."""
         new_paths = []
         with self.lock:
             for filename, line, funcname, txt in traceback.extract_tb(tb):
@@ -83,7 +83,7 @@ def get_system_paths():
 
 
 def expand_source_paths(paths):
-    """ Convert pyc files into their source equivalents."""
+    """Convert pyc files into their source equivalents."""
     for src_path in paths:
         # only track the source path if we can find it to avoid double-reloads
         # when the source and the compiled path change because on some
@@ -96,7 +96,7 @@ def expand_source_paths(paths):
 
 
 def iter_module_paths(modules=None):
-    """ Yield paths of all imported modules."""
+    """Yield paths of all imported modules."""
     modules = modules or list(sys.modules.values())
     for module in modules:
         try:
@@ -110,7 +110,7 @@ def iter_module_paths(modules=None):
 
 
 class Worker(object):
-    """ A helper object for managing a worker process lifecycle. """
+    """A helper object for managing a worker process lifecycle."""
 
     def __init__(self, spec, args=None, kwargs=None):
         super(Worker, self).__init__()

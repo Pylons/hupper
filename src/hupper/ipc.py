@@ -10,6 +10,7 @@ from .utils import is_stream_interactive, resolve_spec
 
 if WIN:  # pragma: no cover
     import msvcrt
+
     from . import winapi
 
     class ProcessGroup(object):
@@ -58,7 +59,6 @@ if WIN:  # pragma: no cover
         if 'a' in mode:
             flags |= os.O_APPEND
         return msvcrt.open_osfhandle(handle, flags)
-
 
 else:
     import fcntl
