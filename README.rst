@@ -5,14 +5,8 @@ hupper
 .. image:: https://img.shields.io/pypi/v/hupper.svg
     :target: https://pypi.python.org/pypi/hupper
 
-.. image:: https://github.com/Pylons/hupper/workflows/Build/test%20on%20Linux/badge.svg?branch=master
-    :target: https://github.com/Pylons/hupper/actions?query=workflow%3A%22Build%2Ftest+on+Linux%22
-
-.. image:: https://github.com/Pylons/hupper/workflows/Build/test%20on%20MacOS/badge.svg?branch=master
-    :target: https://github.com/Pylons/hupper/actions?query=workflow%3A%22Build%2Ftest+on+MacOS%22
-
-.. image:: https://github.com/Pylons/hupper/workflows/Build/test%20on%20Windows/badge.svg?branch=master
-    :target: https://github.com/Pylons/hupper/actions?query=workflow%3A%22Build%2Ftest+on+Windows%22
+.. image:: https://github.com/Pylons/hupper/actions/workflows/ci-tests.yml/badge.svg?branch=main
+    :target: https://github.com/Pylons/hupper/actions/workflows/ci-tests.yml?query=branch%3Amain
 
 .. image:: https://readthedocs.org/projects/hupper/badge/?version=latest
     :target: https://readthedocs.org/projects/hupper/?badge=latest
