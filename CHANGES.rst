@@ -1,3 +1,10 @@
+Unreleased
+==========
+
+- Drop support for Python 3.4, 3.5, and 3.6
+
+- Add support/testing for Python 3.10, and 3.11
+
 1.10.3 (2021-05-13)
 ===================
 
