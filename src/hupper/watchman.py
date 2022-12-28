@@ -6,7 +6,6 @@ import socket
 import threading
 import time
 
-from .compat import PY2
 from .interfaces import IFileMonitor
 from .utils import get_watchman_sockpath
 
@@ -27,7 +26,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         sockpath=None,
         binpath='watchman',
         timeout=1.0,
-        **kw
+        **kw,
     ):
         super(WatchmanFileMonitor, self).__init__()
         self.callback = callback
@@ -158,9 +157,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
             self._recvbufs.append(b)
 
     def _recv(self):
-        line = self._readline()
-        if not PY2:
-            line = line.decode('utf8')
+        line = self._readline().decode('utf8')
         try:
             return json.loads(line)
         except Exception:  # pragma: no cover
@@ -168,9 +165,7 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
             return {}
 
     def _send(self, msg):
-        cmd = json.dumps(msg)
-        if not PY2:
-            cmd = cmd.encode('ascii')
+        cmd = json.dumps(msg).encode('ascii')
         self._sock.sendall(cmd + b'\n')
 
     def _query(self, msg, timeout=None):

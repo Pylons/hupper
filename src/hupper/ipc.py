@@ -1,15 +1,16 @@
 import io
 import os
+import pickle
 import struct
 import subprocess
 import sys
 import threading
 
-from .compat import WIN, pickle, subprocess_wait_with_timeout
-from .utils import is_stream_interactive, resolve_spec
+from .utils import WIN, is_stream_interactive, resolve_spec
 
 if WIN:  # pragma: no cover
     import msvcrt
+
     from . import winapi
 
     class ProcessGroup(object):
@@ -33,7 +34,7 @@ if WIN:  # pragma: no cover
             try:
                 return winapi.AssignProcessToJobObject(self.h_job, hp)
             except OSError as ex:
-                if getattr(ex, 'winerror') == 5:
+                if getattr(ex, 'winerror', None) == 5:
                     # skip ACCESS_DENIED_ERROR on windows < 8 which occurs when
                     # the process is already attached to another job
                     pass
@@ -58,7 +59,6 @@ if WIN:  # pragma: no cover
         if 'a' in mode:
             flags |= os.O_APPEND
         return msvcrt.open_osfhandle(handle, flags)
-
 
 else:
     import fcntl
@@ -327,7 +327,10 @@ def wait(process, timeout=None):
     if timeout == 0:
         return process.poll()
 
-    return subprocess_wait_with_timeout(process, timeout)
+    try:
+        return process.wait(timeout)
+    except subprocess.TimeoutExpired:
+        pass
 
 
 def kill(process, soft=False):

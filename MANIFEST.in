@@ -1,6 +1,7 @@
 graft src/hupper
 graft tests
 graft docs
+graft .github
 prune docs/_build
 
 include README.rst
@@ -11,6 +12,6 @@ include CONTRIBUTORS.txt
 
 include pyproject.toml setup.cfg
 include .coveragerc .flake8
-include tox.ini appveyor.yml .travis.yml rtd.txt
+include tox.ini rtd.txt
 
 recursive-exclude * __pycache__ *.py[cod]

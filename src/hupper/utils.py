@@ -2,8 +2,9 @@ import importlib
 import json
 import os
 import subprocess
+import sys
 
-from .compat import WIN
+WIN = sys.platform == 'win32'
 
 
 class Sentinel(object):
@@ -25,7 +26,7 @@ def resolve_spec(spec):
 
 
 def is_watchdog_supported():
-    """ Return ``True`` if watchdog is available."""
+    """Return ``True`` if watchdog is available."""
     try:
         import watchdog  # noqa: F401
     except ImportError:
@@ -34,7 +35,7 @@ def is_watchdog_supported():
 
 
 def is_watchman_supported():
-    """ Return ``True`` if watchman is available."""
+    """Return ``True`` if watchman is available."""
     if WIN:
         # for now we aren't bothering with windows sockets
         return False
@@ -47,7 +48,7 @@ def is_watchman_supported():
 
 
 def get_watchman_sockpath(binpath='watchman'):
-    """ Find the watchman socket or raise."""
+    """Find the watchman socket or raise."""
     path = os.getenv('WATCHMAN_SOCK')
     if path:
         return path
