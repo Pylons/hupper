@@ -1,7 +1,7 @@
 name: Build and test
 
 on:
-    # Only on pushes to master or one of the release branches we build on push
+    # Only on pushes to main or one of the release branches we build on push
     push:
         branches:
             - main
