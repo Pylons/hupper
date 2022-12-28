@@ -1,5 +1,8 @@
+from _thread import interrupt_main
+from importlib.util import source_from_cache
 import os
 import signal
+import site
 import sys
 import sysconfig
 import threading
@@ -7,7 +10,6 @@ import time
 import traceback
 
 from . import ipc
-from .compat import get_py_path, get_site_packages, interrupt_main
 from .interfaces import IReloaderProxy
 from .utils import resolve_spec
 
@@ -49,7 +51,7 @@ class WatchSysModules(threading.Thread):
         """Inspect a traceback for new paths to add to our path set."""
         new_paths = []
         with self.lock:
-            for filename, line, funcname, txt in traceback.extract_tb(tb):
+            for filename, *_ in traceback.extract_tb(tb):
                 path = os.path.abspath(filename)
                 if path not in self.paths:
                     self.paths.add(path)
@@ -71,6 +73,35 @@ class WatchSysModules(threading.Thread):
             if path.startswith(prefix):
                 return True
         return False
+
+
+def get_py_path(path):
+    try:
+        return source_from_cache(path)
+    except ValueError:
+        # fallback for solitary *.pyc files outside of __pycache__
+        return path[:-1]
+
+
+def get_site_packages():  # pragma: no cover
+    try:
+        paths = site.getsitepackages()
+        if site.ENABLE_USER_SITE:
+            paths.append(site.getusersitepackages())
+        return paths
+
+    # virtualenv does not ship with a getsitepackages impl so we fallback
+    # to using distutils if we can
+    # https://github.com/pypa/virtualenv/issues/355
+    except Exception:
+        try:
+            from distutils.sysconfig import get_python_lib
+
+            return [get_python_lib()]
+
+        # just incase, don't fail here, it's not worth it
+        except Exception:
+            return []
 
 
 def get_system_paths():

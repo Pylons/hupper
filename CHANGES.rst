@@ -1,7 +1,7 @@
 Unreleased
 ==========
 
-- Drop support for Python 3.4, 3.5, and 3.6
+- Drop support for Python 2.7, 3.4, 3.5, and 3.6.
 
 - Add support/testing for Python 3.10, and 3.11
 

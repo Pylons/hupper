@@ -16,13 +16,11 @@ jobs:
         strategy:
             matrix:
                 py:
-                    - "2.7"
                     - "3.7"
                     - "3.8"
                     - "3.9"
                     - "3.10"
                     - "3.11"
-                    - "pypy-2.7"
                     - "pypy-3.8"
                 os:
                     - "ubuntu-latest"
@@ -38,9 +36,6 @@ jobs:
                       pytest-args: "--cov"
                     - os: "ubuntu-latest"
                       py: "pypy-3.8"
-                      pytest-args: ""
-                    - os: "ubuntu-latest"
-                      py: "pypy-2.7"
                       pytest-args: ""
 
                 exclude:
@@ -72,15 +67,10 @@ jobs:
             - name: Setup python
               uses: actions/setup-python@v4
               with:
-                  python-version: 2.7
-                  architecture: x64
-            - name: Setup python
-              uses: actions/setup-python@v4
-              with:
                   python-version: 3.9
                   architecture: x64
             - run: pip install tox
-            - run: tox -e py39,py27,coverage
+            - run: tox -e py39,coverage
     docs:
         runs-on: ubuntu-latest
         name: Build the documentation

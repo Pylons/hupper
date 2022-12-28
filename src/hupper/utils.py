@@ -2,8 +2,9 @@ import importlib
 import json
 import os
 import subprocess
+import sys
 
-from .compat import WIN
+WIN = sys.platform == 'win32'
 
 
 class Sentinel(object):

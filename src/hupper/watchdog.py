@@ -33,7 +33,7 @@ class WatchdogFileMonitor(FileSystemEventHandler, Observer, IFileMonitor):
             if dirpath not in self.dirpaths:
                 try:
                     self.schedule(self, dirpath)
-                except (OSError, IOError) as ex:  # pragma: no cover
+                except OSError as ex:  # pragma: no cover
                     # watchdog raises exceptions if folders are missing
                     # or if the ulimit is passed
                     self.logger.error('watchdog error: ' + str(ex))

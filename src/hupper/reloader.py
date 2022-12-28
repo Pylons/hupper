@@ -1,6 +1,7 @@
 from collections import deque
 from contextlib import contextmanager
 import fnmatch
+from glob import glob
 import os
 import re
 import signal
@@ -8,10 +9,10 @@ import sys
 import threading
 import time
 
-from .compat import WIN, glob
 from .ipc import ProcessGroup
 from .logger import DefaultLogger, SilentLogger
 from .utils import (
+    WIN,
     default,
     is_stream_interactive,
     is_watchdog_supported,
