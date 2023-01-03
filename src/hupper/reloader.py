@@ -478,6 +478,11 @@ def start_reloader(
     if shutdown_interval is default:
         shutdown_interval = reload_interval
 
+    if reload_interval <= 0:
+        raise ValueError(
+            'reload_interval must be greater than 0 to avoid spinning'
+        )
+
     reloader = Reloader(
         worker_path=worker_path,
         worker_args=worker_args,

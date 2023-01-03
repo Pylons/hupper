@@ -5,6 +5,9 @@ Unreleased
 
 - Add support/testing for Python 3.10, and 3.11
 
+- Explicitly require ``reload_interval`` set greater than ``0`` to avoid
+  spinning the CPU needlessly.
+
 1.10.3 (2021-05-13)
 ===================
 
