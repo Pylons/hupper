@@ -133,21 +133,27 @@ class Reloader(object):
         """
         Execute the reloader forever, blocking the current thread.
 
-        This will invoke ``sys.exit(1)`` if interrupted.
+        This will invoke ``sys.exit(1)`` if interrupted and
+        the process didn't handle the interrupt gracefully.
 
         """
+        exitcode = 1
         with self._setup_runtime():
             while True:
-                result = self._run_worker()
+                result, worker_exitcode = self._run_worker()
+                if result == WorkerResult.EXIT:
+                    if worker_exitcode is not None:
+                        exitcode = worker_exitcode
+                    break
                 start = time.time()
                 if result == WorkerResult.WAIT:
-                    result = self._wait_for_changes()
-                if result == WorkerResult.EXIT:
-                    break
+                    result, _ = self._wait_for_changes()
+                    if result == WorkerResult.EXIT:
+                        break
                 dt = self.reload_interval - (time.time() - start)
                 if dt > 0:
                     time.sleep(dt)
-        sys.exit(1)
+        sys.exit(exitcode)
 
     def run_once(self):
         """
@@ -370,7 +376,7 @@ def _run_worker(self, worker, logger=None, shutdown_interval=None):
             worker.join()
         logger.debug('Server exited with code %d.' % worker.exitcode)
 
-    return result
+    return result, worker.exitcode
 
 
 def wait_main():
