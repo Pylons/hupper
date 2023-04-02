@@ -12,6 +12,6 @@ include CONTRIBUTORS.txt
 
 include pyproject.toml setup.cfg
 include .coveragerc .flake8
-include tox.ini rtd.txt
+include tox.ini rtd.txt pytest.ini
 
 recursive-exclude * __pycache__ *.py[cod]
