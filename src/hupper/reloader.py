@@ -133,8 +133,9 @@ class Reloader(object):
         """
         Execute the reloader forever, blocking the current thread.
 
-        This will invoke ``sys.exit(1)`` if interrupted and
-        the process didn't handle the interrupt gracefully.
+        This will invoke ``sys.exit`` with the return code from the
+        subprocess. If interrupted before the process starts then
+        it'll exit with ``-1``.
 
         """
         exitcode = -1
@@ -159,9 +160,12 @@ class Reloader(object):
 
         This method will return after the worker exits.
 
+        Returns the exit code from the worker process.
+
         """
         with self._setup_runtime():
-            self._run_worker()
+            _, exitcode = self._run_worker()
+            return exitcode
 
     def _run_worker(self):
         worker = Worker(
