@@ -1,3 +1,10 @@
+unreleased
+==========
+
+- When the reloader is stopped, exit with the same code received from the
+  subprocess.
+  See https://github.com/Pylons/hupper/pull/81
+
 1.11 (2022-01-02)
 =================
 
