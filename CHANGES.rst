@@ -1,5 +1,5 @@
-unreleased
-==========
+1.12 (2023-04-02)
+=================
 
 - When the reloader is stopped, exit with the same code received from the
   subprocess.
