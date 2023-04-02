@@ -137,13 +137,11 @@ class Reloader(object):
         the process didn't handle the interrupt gracefully.
 
         """
-        exitcode = 1
+        exitcode = -1
         with self._setup_runtime():
             while True:
-                result, worker_exitcode = self._run_worker()
+                result, exitcode = self._run_worker()
                 if result == WorkerResult.EXIT:
-                    if worker_exitcode is not None:
-                        exitcode = worker_exitcode
                     break
                 start = time.time()
                 if result == WorkerResult.WAIT:
