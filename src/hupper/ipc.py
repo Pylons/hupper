@@ -157,16 +157,20 @@ class Connection(object):
             remaining -= n
         return pickle.loads(buf.getvalue())
 
+    def _on_recv(self, packet):
+        if self.on_recv is not None:
+            self.on_recv(packet)
+
     def _read_loop(self):
         try:
             while True:
                 packet = self._recv_packet()
                 if packet is None:
                     break
-                self.on_recv(packet)
+                self._on_recv(packet)
         except EOFError:
             pass
-        self.on_recv(None)
+        self._on_recv(None)
 
     def _write_packet(self, data):
         while data:
