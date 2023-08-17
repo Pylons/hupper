@@ -1,3 +1,4 @@
+import errno
 import io
 import os
 import pickle
@@ -135,8 +136,11 @@ class Connection(object):
         self.reader_thread.start()
 
     def close(self):
-        close_fd(self.r_fd)
-        close_fd(self.w_fd)
+        self.r_fd, r_fd = -1, self.r_fd
+        self.w_fd, w_fd = -1, self.r_fd
+
+        close_fd(r_fd)
+        close_fd(w_fd)
         self.on_recv = None
 
     def _recv_packet(self):
@@ -170,6 +174,9 @@ class Connection(object):
                 self._on_recv(packet)
         except EOFError:
             pass
+        except OSError as e:
+            if e.errno != errno.EBADF:
+                raise
         self._on_recv(None)
 
     def _write_packet(self, data):
