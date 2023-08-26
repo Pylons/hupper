@@ -141,7 +141,7 @@ class Connection(object):
 
         close_fd(r_fd)
         close_fd(w_fd)
-        self.on_recv = None
+        self.on_recv = lambda _: None
 
     def _recv_packet(self):
         buf = io.BytesIO()
@@ -161,23 +161,19 @@ class Connection(object):
             remaining -= n
         return pickle.loads(buf.getvalue())
 
-    def _on_recv(self, packet):
-        if self.on_recv is not None:
-            self.on_recv(packet)
-
     def _read_loop(self):
         try:
             while True:
                 packet = self._recv_packet()
                 if packet is None:
                     break
-                self._on_recv(packet)
+                self.on_recv(packet)
         except EOFError:
             pass
         except OSError as e:
             if e.errno != errno.EBADF:
                 raise
-        self._on_recv(None)
+        self.on_recv(None)
 
     def _write_packet(self, data):
         while data:
