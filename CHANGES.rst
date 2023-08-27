@@ -1,3 +1,9 @@
+1.12.1 (2023-08-27)
+===================
+
+- Fix a race condition closing pipes when restarting the worker process.
+  See https://github.com/Pylons/hupper/pull/83
+
 1.12 (2023-04-02)
 =================
 
