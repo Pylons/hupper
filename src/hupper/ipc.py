@@ -140,8 +140,8 @@ class Connection(object):
         self.r_fd, r_fd = -1, self.r_fd
         self.w_fd, w_fd = -1, self.w_fd
 
-        close_fd(r_fd)
         close_fd(w_fd)
+        close_fd(r_fd)
 
     def _recv_packet(self):
         buf = io.BytesIO()
