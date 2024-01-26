@@ -136,12 +136,12 @@ class Connection(object):
         self.reader_thread.start()
 
     def close(self):
+        self.on_recv = lambda _: None
         self.r_fd, r_fd = -1, self.r_fd
         self.w_fd, w_fd = -1, self.w_fd
 
         close_fd(r_fd)
         close_fd(w_fd)
-        self.on_recv = lambda _: None
 
     def _recv_packet(self):
         buf = io.BytesIO()
