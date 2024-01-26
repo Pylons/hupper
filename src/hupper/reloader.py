@@ -237,7 +237,7 @@ class Reloader(object):
                 signum = getattr(signal, signame, None)
                 if signum is None:
                     self.logger.debug(
-                        'skipping unsupported signal={}'.format(signame)
+                        'Skipping unsupported signal={}'.format(signame)
                     )
                     continue
                 handler = self._control_proxy(control)
