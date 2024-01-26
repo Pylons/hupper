@@ -316,6 +316,9 @@ def _run_worker(self, worker, logger=None, shutdown_interval=None):
                     for path in cmd[1]:
                         self.monitor.add_path(path)
 
+                elif cmd[0] == 'graceful_shutdown':
+                    os.write(self.control_w, ControlSignal.SIGTERM)
+
                 else:  # pragma: no cover
                     raise RuntimeError('received unknown control signal', cmd)
 

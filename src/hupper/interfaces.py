@@ -10,6 +10,10 @@ class IReloaderProxy(ABC):
     def trigger_reload(self):
         """Signal the monitor to execute a reload."""
 
+    @abstractmethod
+    def graceful_shutdown(self):
+        """Signal the monitor to gracefully shutdown."""
+
 
 class IFileMonitorFactory(ABC):
     @abstractmethod
