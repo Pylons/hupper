@@ -1,12 +1,11 @@
-unreleased
-==========
+1.12.1 (2024-01-26)
+===================
 
 - Add support for Python 3.12.
 
 - Fix a blocking issue when shutting down on Windows.
 
-- Fix a broken socket that sometimes occurs when reloading due to sockets being
-  closed in an unreliable order.
+- Fix a race condition closing pipes when restarting the worker process.
   See https://github.com/Pylons/hupper/pull/83
 
 - Fix issues with watchman when the server shuts down unexpectedly and when
@@ -15,13 +14,7 @@ unreleased
 - Add ``hupper.get_reloader().graceful_shutdown()`` which can be used within
   your own app to trigger a full shutdown of the worker as well as the
   monitoring.
-
-
-1.12.1 (2023-08-27)
-===================
-
-- Fix a race condition closing pipes when restarting the worker process.
-  See https://github.com/Pylons/hupper/pull/83
+  See https://github.com/Pylons/hupper/pull/88
 
 1.12 (2023-04-02)
 =================
