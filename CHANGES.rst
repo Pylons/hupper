@@ -1,6 +1,8 @@
 unreleased
 ==========
 
+- Add support for Python 3.12.
+
 - Fix a blocking issue when shutting down on Windows.
 
 - Fix a broken socket that sometimes occurs when reloading due to sockets being
