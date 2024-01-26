@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 
-from .ipc import ProcessGroup
+from .ipc import ProcessGroup, close_fd
 from .logger import DefaultLogger, SilentLogger
 from .utils import (
     WIN,
@@ -195,8 +195,8 @@ class Reloader(object):
         try:
             yield
         finally:
-            os.close(self.control_r)
-            os.close(self.control_w)
+            close_fd(self.control_w)
+            close_fd(self.control_r)
             self.control_r = self.control_w = None
 
     def _control_proxy(self, signal):
