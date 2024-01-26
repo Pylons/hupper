@@ -1,3 +1,13 @@
+unreleased
+==========
+
+- Fix a blocking issue when shutting down on Windows.
+
+- Fix a broken socket that sometimes occurs when reloading due to sockets being
+  closed in an unreliable order.
+  See https://github.com/Pylons/hupper/pull/83
+
+
 1.12.1 (2023-08-27)
 ===================
 
