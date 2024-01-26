@@ -7,6 +7,9 @@ unreleased
   closed in an unreliable order.
   See https://github.com/Pylons/hupper/pull/83
 
+- Fix issues with watchman when the server shuts down unexpectedly and when
+  subscriptions are canceled.
+
 
 1.12.1 (2023-08-27)
 ===================
