@@ -11,7 +11,6 @@ def echo(pipe):
         pipe.send(msg)
         msg = q.get()
     pipe.close()
-    pipe.reader_thread.join()
 
 
 def test_ipc_close():
@@ -31,6 +30,5 @@ def test_ipc_close():
             assert c1_q.get() == "hello world"
 
             c1.close()
-            c1.reader_thread.join()
         finally:
             proc.terminate()

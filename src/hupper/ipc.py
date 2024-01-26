@@ -112,6 +112,10 @@ class Connection(object):
 
     _packet_len = struct.Struct('Q')
 
+    send_lock = None
+    reader_thread = None
+    on_recv = lambda _: None
+
     def __init__(self, r_fd, w_fd):
         self.r_fd = r_fd
         self.w_fd = w_fd
@@ -142,6 +146,8 @@ class Connection(object):
 
         close_fd(w_fd)
         close_fd(r_fd)
+        if self.reader_thread:
+            self.reader_thread.join()
 
     def _recv_packet(self):
         buf = io.BytesIO()
