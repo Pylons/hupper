@@ -10,8 +10,12 @@ include LICENSE.txt
 include CONTRIBUTING.rst
 include CONTRIBUTORS.txt
 
-include pyproject.toml setup.cfg
-include .coveragerc .flake8
-include tox.ini rtd.txt pytest.ini
+include pyproject.toml
+include setup.cfg
+include .coveragerc
+include .flake8
+include tox.ini
+include pytest.ini
+include .readthedocs.yaml
 
 recursive-exclude * __pycache__ *.py[cod]
