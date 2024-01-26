@@ -194,7 +194,8 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
             b = self._sock.recv(4096)
             if not b:
                 self.logger.error(
-                    'Lost connection to watchman. No longer watching for changes.'
+                    'Lost connection to watchman. No longer watching for'
+                    ' changes.'
                 )
                 self.stop()
                 raise socket.timeout
