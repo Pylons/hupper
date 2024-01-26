@@ -12,6 +12,10 @@ unreleased
 - Fix issues with watchman when the server shuts down unexpectedly and when
   subscriptions are canceled.
 
+- Add ``hupper.get_reloader().graceful_shutdown()`` which can be used within
+  your own app to trigger a full shutdown of the worker as well as the
+  monitoring.
+
 
 1.12.1 (2023-08-27)
 ===================

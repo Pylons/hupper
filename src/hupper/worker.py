@@ -242,6 +242,9 @@ class ReloaderProxy(IReloaderProxy):
     def trigger_reload(self):
         self.pipe.send(('reload',))
 
+    def graceful_shutdown(self):
+        self.pipe.send(('graceful_shutdown',))
+
 
 def watch_control_pipe(pipe):
     def handle_packet(packet):
