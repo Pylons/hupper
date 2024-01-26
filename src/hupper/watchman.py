@@ -79,6 +79,10 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
         finally:
             self._close_sock()
 
+    def stop(self):
+        self.enabled = False
+        self._close_sock()
+
     def run(self):
         while self.enabled:
             try:
@@ -137,10 +141,6 @@ class WatchmanFileMonitor(threading.Thread, IFileMonitor):
             if k in result:
                 return True
         return False
-
-    def stop(self):
-        self.enabled = False
-        self._close_sock()
 
     def _close_sock(self):
         if self._sock:
