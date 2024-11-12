@@ -7,7 +7,7 @@ import sys
 WIN = sys.platform == 'win32'
 
 
-class Sentinel(object):
+class Sentinel:
     def __init__(self, name):
         self.name = name
 
