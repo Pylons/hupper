@@ -140,7 +140,7 @@ def iter_module_paths(modules=None):
                 yield abs_filename
 
 
-class Worker(object):
+class Worker:
     """A helper object for managing a worker process lifecycle."""
 
     def __init__(self, spec, args=None, kwargs=None):

@@ -1,5 +1,4 @@
 # check ``hupper.utils.is_watchdog_supported`` before using this module
-from __future__ import absolute_import
 import os.path
 import threading
 from watchdog.events import FileSystemEventHandler

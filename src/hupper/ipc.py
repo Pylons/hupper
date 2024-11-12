@@ -14,7 +14,7 @@ if WIN:  # pragma: no cover
 
     from . import winapi
 
-    class ProcessGroup(object):
+    class ProcessGroup:
         def __init__(self):
             self.h_job = winapi.CreateJobObject(None, None)
 
@@ -65,7 +65,7 @@ else:
     import fcntl
     import termios
 
-    class ProcessGroup(object):
+    class ProcessGroup:
         def add_child(self, pid):
             # nothing to do on *nix
             pass
@@ -104,7 +104,7 @@ def Pipe():
     return c1, c2
 
 
-class Connection(object):
+class Connection:
     """
     A connection to a bi-directional pipe.
 

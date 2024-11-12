@@ -19,7 +19,7 @@ def make_proxy(monitor_factory, callback, logger):
 
 
 def test_proxy_proxies(logger):
-    class DummyMonitor(object):
+    class DummyMonitor:
         started = stopped = joined = False
 
         def __call__(self, cb, **kw):
@@ -47,7 +47,7 @@ def test_proxy_proxies(logger):
 
 
 def test_proxy_expands_paths(tmpdir, logger):
-    class DummyMonitor(object):
+    class DummyMonitor:
         def __call__(self, cb, **kw):
             self.cb = cb
             self.paths = []
@@ -74,7 +74,7 @@ def test_proxy_expands_paths(tmpdir, logger):
 
 
 def test_proxy_tracks_changes(logger):
-    class DummyMonitor(object):
+    class DummyMonitor:
         def __call__(self, cb, **kw):
             self.cb = cb
             return self
@@ -100,7 +100,7 @@ def test_proxy_tracks_changes(logger):
 
 
 def test_ignore_files():
-    class DummyMonitor(object):
+    class DummyMonitor:
         paths = set()
 
         def add_path(self, path):

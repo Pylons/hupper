@@ -25,7 +25,7 @@ if WIN:
     from . import winapi
 
 
-class FileMonitorProxy(object):
+class FileMonitorProxy:
     """
     Wrap an :class:`hupper.interfaces.IFileMonitor` into an object that
     exposes a thread-safe interface back to the reloader to detect
@@ -100,7 +100,7 @@ class WorkerResult:
     WAIT = 'wait'
 
 
-class Reloader(object):
+class Reloader:
     """
     A wrapper class around a file monitor which will handle changes by
     restarting a new worker process.
