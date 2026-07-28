@@ -1,0 +1,36 @@
+from abc import ABC as ABC, abstractmethod as abstractmethod
+from collections.abc import Callable as _Callable, Iterable as _Iterable
+
+class IReloaderProxy(ABC):
+    @abstractmethod
+    def watch_files(self, files: _Iterable[str]) -> None: ...
+    @abstractmethod
+    def trigger_reload(self) -> None: ...
+    @abstractmethod
+    def graceful_shutdown(self) -> None: ...
+
+class IFileMonitorFactory(ABC):
+    @abstractmethod
+    def __call__(
+        self,
+        callback: _Callable[[str], None],
+        **kw: object,
+    ) -> IFileMonitor: ...
+
+class IFileMonitor(ABC):
+    @abstractmethod
+    def add_path(self, path: str) -> None: ...
+    @abstractmethod
+    def start(self) -> None: ...
+    @abstractmethod
+    def stop(self) -> None: ...
+    @abstractmethod
+    def join(self) -> None: ...
+
+class ILogger(ABC):
+    @abstractmethod
+    def error(self, msg: str) -> None: ...
+    @abstractmethod
+    def info(self, msg: str) -> None: ...
+    @abstractmethod
+    def debug(self, msg: str) -> None: ...

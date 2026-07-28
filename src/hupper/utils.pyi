@@ -1,0 +1,26 @@
+import importlib as importlib
+import json as json
+import os as os
+import subprocess as subprocess
+import sys as sys
+from typing import Protocol as _Protocol
+
+class _InteractiveStream(_Protocol):
+    def isatty(self) -> bool: ...
+
+WIN: bool
+
+class Sentinel:
+    name: object
+    def __init__(self, name: object) -> None: ...
+    def __repr__(self) -> str: ...
+
+default: Sentinel
+
+def resolve_spec(spec: str) -> object: ...
+def is_watchdog_supported() -> bool: ...
+def is_watchman_supported() -> bool: ...
+def get_watchman_sockpath(binpath: str = "watchman") -> str: ...
+def is_stream_interactive(
+    stream: _InteractiveStream | None,
+) -> bool: ...
