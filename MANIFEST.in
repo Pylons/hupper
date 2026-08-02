@@ -14,6 +14,7 @@ include pyproject.toml
 include setup.cfg
 include .coveragerc
 include .flake8
+include .mailmap
 include tox.ini
 include pytest.ini
 include .readthedocs.yaml
