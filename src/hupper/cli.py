@@ -1,4 +1,5 @@
 import argparse
+import importlib.util
 import runpy
 import sys
 
@@ -60,4 +61,15 @@ def main():
     if args.watch:
         reloader.watch_files(args.watch)
 
-    return runpy.run_module(args.module, alter_sys=True, run_name="__main__")
+    try:
+        return runpy.run_module(args.module, alter_sys=True, run_name="__main__")
+    except ImportError:
+        # fail fast with a clean error if the module itself cannot be
+        # found, rather than dumping a traceback from the worker process
+        try:
+            found = importlib.util.find_spec(args.module) is not None
+        except (ImportError, ValueError, AttributeError):
+            found = False
+        if not found:
+            parser.error("No module named %r" % (args.module,))
+        raise
